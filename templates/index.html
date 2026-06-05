@@ -147,6 +147,7 @@ Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Semb
       <span class="sample-btn" onclick="fillSample('Amar Mustapha, 0171234567, No 45 Jalan Bukit, Taman Desa, 43700 Beranang, Selangor')">Sample 1</span>
       <span class="sample-btn" onclick="fillSample('Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Sembilan')">Sample 2</span>
       <span class="sample-btn" onclick="fillSample('Kak Long | 0198765432 | No 8, Jalan SS15/4, Subang Jaya, 47500 Selangor')">Sample 3</span>
+      <span class="sample-btn" onclick="fillSample('Nama penerima : KHAIRIL AMIRIN Alamat penerima : Kolej Kediaman Satria Kasturi Alamat kedua : UTeM Durian Tunggal No. Tel penerima : 60198367089 Poskod : 76100 Nama penerima : SITI NUR HAFIZAH Alamat penerima : JALAN PULAU MELAKA 8, PULAU MELAKA, MASJID SELAT MELAKA Alamat kedua : 75000, MELAKA No. Tel penerima : 601111134347 Poskod : 75000')">Multi-Recipient</span>
     </div>
     <div class="actions">
       <button class="btn" onclick="parseSingle()">Parse</button>
@@ -159,7 +160,9 @@ Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Semb
   <div class="card">
     <h2>📂 Bulk Upload (CSV)</h2>
     <p style="font-size:0.8rem;color:#64748b;margin-bottom:10px;">
-      Upload a CSV with a column named <code>raw_text</code> containing one address per row.
+      Upload any CSV &mdash; <code>raw_text</code> (one address per row), <strong>EasyParcel export</strong> (with recipient columns),
+      or even files with multiple recipients crammed into one row.
+      The parser auto-detects the format and splits multi-recipient rows.
     </p>
     <label class="file-label" for="csvFile">Choose CSV file</label>
     <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="uploadCSV()">
