@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.env
+*.zip
+*.exe
+cloudflared.exe
+bore.exe
+ngrok.exe

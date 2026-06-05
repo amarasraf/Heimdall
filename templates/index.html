@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlamatPintar — Address Parser</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container { max-width: 800px; margin: 0 auto; }
+
+  .header {
+    text-align: center;
+    padding: 30px 0 20px;
+  }
+  .header h1 {
+    font-size: 1.8rem;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header p { color: #64748b; font-size: 0.85rem; margin-top: 4px; }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 1rem; margin-bottom: 12px; color: #94a3b8; }
+
+  textarea {
+    width: 100%;
+    min-height: 140px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: #e2e8f0;
+    padding: 12px;
+    font-family: 'Consolas', monospace;
+    font-size: 0.85rem;
+    resize: vertical;
+  }
+  textarea:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+
+  .btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: #2563eb; }
+  .btn.secondary { background: #475569; }
+  .btn.secondary:hover { background: #64748b; }
+
+  .actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+
+  .table-wrapper {
+    overflow-x: auto;
+    margin-top: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  th {
+    background: #334155;
+    color: #94a3b8;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #1e293b;
+    color: #cbd5e1;
+  }
+  tr:hover td { background: #1e293b; }
+
+  .status {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    margin-top: 8px;
+  }
+  .status.ok { background: #064e3b; color: #6ee7b7; }
+  .status.err { background: #450a0a; color: #fca5a5; }
+  .status.info { background: #1e3a5f; color: #93c5fd; }
+
+  .sample-btn {
+    display: inline-block;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    cursor: pointer;
+    margin: 3px;
+    transition: border-color 0.2s;
+  }
+  .sample-btn:hover { border-color: #3b82f6; color: #60a5fa; }
+
+  .hidden { display: none; }
+
+  .file-label {
+    display: inline-block;
+    background: #334155;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .file-label:hover { background: #475569; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📍 AlamatPintar</h1>
+    <p>WhatsApp order → Courier-ready CSV · For EasyParcel, J&T, Ninja Van</p>
+  </div>
+
+  <!-- Single Parse -->
+  <div class="card">
+    <h2>✏️ Parse Single Address</h2>
+    <textarea id="singleInput" placeholder="Paste a messy address here...
+
+Examples:
+Amar Mustapha, 0171234567, No 45 Jalan Bukit, Taman Desa, 43700 Beranang, Selangor
+Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Sembilan"></textarea>
+    <div style="margin: 8px 0;">
+      <span class="sample-btn" onclick="fillSample('Amar Mustapha, 0171234567, No 45 Jalan Bukit, Taman Desa, 43700 Beranang, Selangor')">Sample 1</span>
+      <span class="sample-btn" onclick="fillSample('Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Sembilan')">Sample 2</span>
+      <span class="sample-btn" onclick="fillSample('Kak Long | 0198765432 | No 8, Jalan SS15/4, Subang Jaya, 47500 Selangor')">Sample 3</span>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="parseSingle()">Parse</button>
+      <button class="btn secondary" onclick="clearSingle()">Clear</button>
+    </div>
+    <div id="singleResult" class="hidden"></div>
+  </div>
+
+  <!-- Bulk Upload -->
+  <div class="card">
+    <h2>📂 Bulk Upload (CSV)</h2>
+    <p style="font-size:0.8rem;color:#64748b;margin-bottom:10px;">
+      Upload a CSV with a column named <code>raw_text</code> containing one address per row.
+    </p>
+    <label class="file-label" for="csvFile">Choose CSV file</label>
+    <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="uploadCSV()">
+    <div id="bulkResult"></div>
+  </div>
+
+  <!-- Result Table -->
+  <div id="resultTable" class="hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <h2>📊 Results</h2>
+        <div>
+          <button class="btn secondary" onclick="downloadCSV()">⬇ Download CSV</button>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Address</th>
+              <th>Postcode</th>
+              <th>State</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let lastResults = [];
+
+function fillSample(text) {
+  document.getElementById('singleInput').value = text;
+}
+
+function clearSingle() {
+  document.getElementById('singleInput').value = '';
+  document.getElementById('singleResult').classList.add('hidden');
+}
+
+function parseSingle() {
+  const text = document.getElementById('singleInput').value.trim();
+  if (!text) { alert('Paste an address first!'); return; }
+
+  const el = document.getElementById('singleResult');
+  el.classList.remove('hidden');
+
+  fetch('/parse?text=' + encodeURIComponent(text))
+    .then(r => r.json())
+    .then(data => {
+      el.innerHTML = `<div class="status ok">✓ ${data.recipient_name} | ${data.phone} | ${data.street} | ${data.postcode} | ${data.state}</div>`;
+      lastResults = [data];
+      renderTable([data]);
+    })
+    .catch(e => {
+      el.innerHTML = `<div class="status err">✗ Error: ${e.message}</div>`;
+    });
+}
+
+function uploadCSV() {
+  const fileInput = document.getElementById('csvFile');
+  const file = fileInput.files[0];
+  if (!file) return;
+
+  const el = document.getElementById('bulkResult');
+  el.innerHTML = `<div class="status info">⏳ Processing ${file.name}...</div>`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  fetch('/upload', { method: 'POST', body: formData })
+    .then(r => {
+      if (!r.ok) throw new Error('Upload failed');
+      return r.json();
+    })
+    .then(data => {
+      el.innerHTML = `<div class="status ok">✓ ${data.results} orders parsed successfully</div>`;
+      lastResults = data.data;
+      renderTable(data.data);
+    })
+    .catch(e => {
+      el.innerHTML = `<div class="status err">✗ ${e.message}</div>`;
+    });
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  data.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.recipient_name}</td><td>${r.phone}</td><td>${r.street}</td><td>${r.postcode}</td><td>${r.state}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('resultTable').classList.remove('hidden');
+}
+
+function downloadCSV() {
+  if (lastResults.length === 0) return;
+
+  const headers = ['recipient_name','recipient_phone','recipient_address','recipient_postcode','recipient_city','recipient_state','parcel_content','parcel_value_rm','weight_kg','quantity'];
+  let csv = headers.join(',') + '\n';
+
+  lastResults.forEach(r => {
+    const row = [
+      `"${r.recipient_name || ''}"`,
+      `"${r.phone || ''}"`,
+      `"${r.street || ''}"`,
+      `"${r.postcode || ''}"`,
+      `"${r.city || ''}"`,
+      `"${r.state || ''}"`,
+      '"General merchandise"',
+      '"100"',
+      '"0.5"',
+      '"1"',
+    ];
+    csv += row.join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'easyparcel_ready.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
