@@ -96,14 +96,49 @@ def parse_address(text):
     }
 
 
+def _extract_phone(text):
+    """Extract phone from text, return (phone, text_with_phone_removed)."""
+    phone_patterns = [
+        r'(6?01[0-9])[\s-]?[\s-]?(\d{7,8})',
+        r'(6?01[0-9][\s-]?\s?\d{7,8})',
+        r'(01[0-9][- ]\d{3,4}[- ]\d{4,5})',
+        r'(6?01[0-9][- ]?\d{3,4}[- ]?\d{3,4})',
+    ]
+    for pat in phone_patterns:
+        m = re.search(pat, text)
+        if m:
+            raw_phone = m.group(0).replace(" ", "").replace("-", "")
+            if len(raw_phone) in (9, 10, 11, 12):
+                return raw_phone, text.replace(m.group(0), "", 1).strip()
+    return "", text
+
+
+def _strip_unwanted_labels(text):
+    """Remove known non-delivery labels from text to clean up addresses."""
+    # Remove lines/segments matching labels we don't want in address
+    for pat in [
+        r'[Ee]mail\s+[Tt]racking\s+[Nn]umber\s*\([^)]*\)\s*:\s*\S+@\S+',
+        r'[Ee]mail\s+[Pp]enerima\s*/\s*[Pp]embeli\s*\)\s*:\s*\S+@\S+',
+        r'\S+@\S+\.\w+',  # any email
+        r'[Ee]mail\s+[Tt]racking\s+[Nn]umber\s*\([^)]*\)\s*:',
+        r'[Ee]mail\s+[Pp]enerima\s*/\s*[Pp]embeli\s*\)\s*:',
+        r'[Ee]mail\s+[Tt]racking\s+[Nn]umber\s*:',
+        r'Kawasan\s*\(Daerah\)\s*:\s*[^\n]+',
+        r'[Kk]awasan\s*\([Dd]aerah\)\s*:',
+    ]:
+        text = re.sub(pat, '', text).strip()
+    return text
+
+
 def parse_easyparcel_row(row):
     """
     Parse one row from EasyParcel-format CSV.
     Handles single-recipient rows AND multi-recipient rows where
     multiple recipients are concatenated into fields with labels
     like 'Nama penerima :', 'Alamat penerima :', etc.
-    
-    Returns a list of parsed recipient dicts.
+
+    Now also handles extra labels: Kawasan (Daerah) :, Bandar :, Negeri :,
+    Email Tracking Number, etc.
     """
     name_raw = str(row.get("recipient_name", "")).strip()
     phone_raw = str(row.get("recipient_phone", "")).strip()
@@ -118,15 +153,46 @@ def parse_easyparcel_row(row):
     weight = row.get("weight_kg", "0.5") or "0.5"
     quantity = row.get("quantity", "1") or "1"
 
-    # Concatenate all fields to check for multi-recipient pattern
-    all_text = " | ".join(filter(None, [name_raw, phone_raw, addr_raw, pcode_raw, city_raw, state_raw]))
+    # Build all_text with newlines as separators (more faithful to original)
+    # Use newline plus field labels as split points
+    parts = filter(None, [name_raw, phone_raw, addr_raw, pcode_raw, city_raw, state_raw])
+    all_text = "\n".join(parts)
 
-    # Detect multi-recipient by looking for field labels
-    # Every label acts as a split point
-    split_pat = r'(?=(?:Nama penerima :|Alamat penerima :|Alamat kedua :|No\.\s*Tel penerima :|Poskod :|recipient_name:|recipient_phone:|recipient_address:|recipient_postcode:|recipient_city:|recipient_state:))'
+    # First pass: remove email tracking lines
+    all_text = _strip_unwanted_labels(all_text)
+
+    # Split on ALL known field labels
+    split_pat = (
+        r'(?=(?:'
+        r'Nama penerima :|'
+        r'Alamat penerima :|'
+        r'Alamat kedua :|'
+        r'No\.\s*Tel\s*penerima :|'
+        r'Poskod :|'
+        r'Kawasan\s*\(Daerah\)\s*:|'
+        r'Bandar :|'
+        r'Negeri :|'
+        r'recipient_name:|'
+        r'recipient_phone:|'
+        r'recipient_address:|'
+        r'recipient_postcode:|'
+        r'recipient_city:|'
+        r'recipient_state:|'
+        r'Email\s+Tracking\s+Number|'
+        r'parcel_content:|'
+        r'parcel_value_rm:|'
+        r'weight_kg:|'
+        r'quantity:'
+        r'))'
+    )
     multi_recipients = re.split(split_pat, all_text, flags=re.IGNORECASE)
 
     chunks = [c.strip().rstrip('|').strip() for c in multi_recipients if c.strip()]
+
+    # Strip email tracking remnants and unwanted labels from each chunk
+    chunks = [_strip_unwanted_labels(c) for c in chunks]
+    chunks = [c for c in chunks if c.strip()]
+
     if len(chunks) <= 1:
         # Single recipient
         addr_parts = [a for a in [addr_raw, city_raw, pcode_raw, state_raw] if a]
@@ -148,43 +214,90 @@ def parse_easyparcel_row(row):
     results = []
     current = {}
     for chunk in chunks:
+        # Take only the first logical line (the label's value)
+        # If there are \n that means other column data leaked in — ignore it
+        chunk = chunk.split("\n", 1)[0].strip()
         # Strip | field separator artifacts (from all_text concatenation)
-        # Take only the first segment before any |
         chunk = chunk.split(" | ", 1)[0].strip()
+        # Strip any standalone email remnants
+        chunk = re.sub(r'\S+@\S+\.\w+', '', chunk).strip()
         chunk_lower = chunk.lower()
+
         if chunk_lower.startswith("nama penerima :") or chunk_lower.startswith("recipient_name:"):
             if current and current.get("recipient_name"):
                 results.append(current)
                 current = {}
             val = re.sub(r'^(?:nama penerima :|recipient_name:)\s*', '', chunk, flags=re.IGNORECASE).strip()
             current["recipient_name"] = val
+
         elif chunk_lower.startswith("alamat penerima :") or chunk_lower.startswith("recipient_address:"):
             val = re.sub(r'^(?:alamat penerima :|recipient_address:)\s*', '', chunk, flags=re.IGNORECASE).strip()
-            current.setdefault("address_parts", []).append(val)
+            # Extract phone if it got bundled
+            phone_val, clean_val = _extract_phone(val)
+            if phone_val and not current.get("recipient_phone"):
+                current["recipient_phone"] = phone_val
+            current.setdefault("address_parts", []).append(clean_val)
+
         elif chunk_lower.startswith("alamat kedua :"):
             val = re.sub(r'^alamat kedua :\s*', '', chunk, flags=re.IGNORECASE).strip()
             current.setdefault("address_parts", []).append(val)
+
         elif chunk_lower.startswith("no. tel penerima :") or chunk_lower.startswith("recipient_phone:"):
             val = re.sub(r'^(?:no\.?\s*tel\s*penerima :|recipient_phone:)\s*', '', chunk, flags=re.IGNORECASE).strip()
-            current["recipient_phone"] = val
+            # Extract just digits
+            phone_digits = re.sub(r'\D', '', val)
+            if len(phone_digits) >= 9:
+                current["recipient_phone"] = phone_digits
+            else:
+                current["recipient_phone"] = val
+
         elif chunk_lower.startswith("poskod :") or chunk_lower.startswith("recipient_postcode:"):
             val = re.sub(r'^(?:poskod :|recipient_postcode:)\s*', '', chunk, flags=re.IGNORECASE).strip()
-            current["recipient_postcode"] = val
+            pcode_digits = re.sub(r'\D', '', val)
+            if len(pcode_digits) == 5:
+                current["recipient_postcode"] = pcode_digits
+            else:
+                current["recipient_postcode"] = val
+
+        elif chunk_lower.startswith("negeri :"):
+            val = re.sub(r'^negeri :\s*', '', chunk, flags=re.IGNORECASE).strip()
+            current["recipient_state"] = val
+
+        elif chunk_lower.startswith("bandar :"):
+            val = re.sub(r'^bandar :\s*', '', chunk, flags=re.IGNORECASE).strip()
+            current["recipient_city"] = val
+
         elif chunk_lower.startswith("recipient_city:"):
             val = re.sub(r'^recipient_city:\s*', '', chunk, flags=re.IGNORECASE).strip()
             current["recipient_city"] = val
+
         elif chunk_lower.startswith("recipient_state:"):
             val = re.sub(r'^recipient_state:\s*', '', chunk, flags=re.IGNORECASE).strip()
             current["recipient_state"] = val
+
+        elif chunk_lower.startswith("kawasan"):
+            # Kawasan (Daerah) : — skip, doesn't add delivery value
+            pass
+
+        elif chunk_lower.startswith("email"):
+            # Email Tracking Number — skip
+            pass
+
+        elif chunk_lower.startswith("parcel_content:") or chunk_lower.startswith("parcel_value_rm:") or \
+             chunk_lower.startswith("weight_kg:") or chunk_lower.startswith("quantity:"):
+            # Shared parcel fields — skip in per-recipient context
+            pass
+
         else:
-            if not current.get("recipient_name"):
+            # Unknown chunk — try to figure out what it is
+            # Check for phone in it
+            phone_val, clean_chunk = _extract_phone(chunk)
+            if phone_val and not current.get("recipient_phone"):
+                current["recipient_phone"] = phone_val
+                if clean_chunk.strip():
+                    current.setdefault("address_parts", []).append(clean_chunk.strip())
+            elif not current.get("recipient_name"):
                 current["recipient_name"] = chunk.strip()
-            elif not current.get("recipient_phone"):
-                phone_pat = re.search(r'(6?01[0-9])[\s-]?[\s-]?(\d{7,8})', chunk)
-                if phone_pat:
-                    current["recipient_phone"] = phone_pat.group(0).replace(" ", "")
-                else:
-                    current.setdefault("address_parts", []).append(chunk.strip())
             else:
                 current.setdefault("address_parts", []).append(chunk.strip())
 
@@ -192,18 +305,25 @@ def parse_easyparcel_row(row):
     if current and current.get("recipient_name"):
         results.append(current)
 
-    # Build output
+    # Build output — fill missing fields from column defaults
     output = []
     for r in results:
         addr_parts = r.get("address_parts", [])
-        full_address = ", ".join(addr_parts) if addr_parts else ""
+        full_address = ", ".join(addr_parts) if addr_parts else addr_raw or ""
+
+        # State normalization
+        state_val = r.get("recipient_state", state_raw or "").strip()
+        state_lower = state_val.lower()
+        if state_lower in STATE_MAP:
+            state_val = STATE_MAP[state_lower]
+
         output.append({
-            "recipient_name": r.get("recipient_name", ""),
+            "recipient_name": r.get("recipient_name", name_raw),
             "recipient_phone": r.get("recipient_phone", phone_raw or ""),
-            "recipient_address": full_address or addr_raw or "",
+            "recipient_address": full_address,
             "recipient_postcode": r.get("recipient_postcode", pcode_raw or ""),
             "recipient_city": r.get("recipient_city", city_raw or ""),
-            "recipient_state": r.get("recipient_state", state_raw or ""),
+            "recipient_state": state_val,
             "parcel_content": str(parcel_content),
             "parcel_value_rm": str(parcel_value),
             "weight_kg": str(weight),
