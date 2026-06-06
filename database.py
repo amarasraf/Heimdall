@@ -32,4 +32,41 @@ def save_parse_result(source: str, input_text: str, result: dict | list, user_id
         }
         supabase.table("parse_history").insert(data).execute()
     except Exception as e:
-        print(f"[ERROR] Supabase DB Insert Error: {e}")
+        print(f"[ERROR] save_parse_result: {e}")
+
+def get_user_profile(user_id: str):
+    if not supabase:
+        return None
+    try:
+        response = supabase.table("user_profiles").select("*").eq("user_id", user_id).execute()
+        if response.data:
+            return response.data[0]
+        return None
+    except Exception as e:
+        print(f"[ERROR] get_user_profile: {e}")
+        return None
+
+def extend_subscription(user_id: str, days: int = 30):
+    if not supabase:
+        return False
+    try:
+        profile = get_user_profile(user_id)
+        import datetime
+        now = datetime.datetime.now(datetime.timezone.utc)
+        
+        if profile and profile.get('subscription_end_date'):
+            current_end = datetime.datetime.fromisoformat(profile['subscription_end_date'].replace('Z', '+00:00'))
+            base_date = current_end if current_end > now else now
+        else:
+            base_date = now
+            
+        new_end = base_date + datetime.timedelta(days=days)
+        
+        supabase.table("user_profiles").upsert({
+            "user_id": user_id,
+            "subscription_end_date": new_end.isoformat()
+        }).execute()
+        return True
+    except Exception as e:
+        print(f"[ERROR] extend_subscription: {e}")
+        return False
