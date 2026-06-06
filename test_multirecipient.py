@@ -1,5 +1,5 @@
 """
-Test: Multi-recipient CSV parsing for AlamatPintar
+Test: Multi-recipient CSV parsing for Heimdall
 Tests parse_easyparcel_row with multi-recipient rows.
 """
 
@@ -216,7 +216,7 @@ def test_no_phone_in_output_label_leak():
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("ALAMATPINTAR - Multi-Recipient Parser Tests")
+    print("HEIMDALL - Multi-Recipient Parser Tests")
     print("=" * 60)
 
     tests = [

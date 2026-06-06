@@ -1,5 +1,5 @@
 """
-AlamatPintar — Core Parser Logic
+Heimdall — Core Parser Logic
 Shared between main.py (FastAPI) and test scripts.
 """
 
@@ -87,12 +87,26 @@ def parse_address(text):
         # Heuristic: treat as address-only if first segment starts with common address prefixes
         # (prevents "No 1 Jalan..." being misparsed as recipient_name)
         address_starters = r'^(No\.?\s*\d|Lot\s*\d|Unit\s*\d|Blok\s*\d|\d+[\s,]*Jalan|\d+[\s,]*Lorong|\d+[\s,]*Taman)'
-        if re.match(address_starters, first, re.IGNORECASE):
+        is_address_number = bool(re.match(r'^([A-Za-z]?[-]?\d+[-/\dA-Za-z]*)$', first.strip()))
+        
+        street_parts = []
+        if re.match(address_starters, first, re.IGNORECASE) or is_address_number:
             name = ""
-            street = ", ".join(parts).strip()
+            street_parts = parts
         else:
             name = first
-            street = ", ".join(parts[1:]).strip() if len(parts) > 1 else ""
+            street_parts = parts[1:]
+            
+        if len(street_parts) > 1:
+            last_part = street_parts[-1].strip()
+            # If last part is 1-3 words and no digits, treat as city
+            if len(last_part.split()) <= 3 and not re.search(r'\d', last_part):
+                city = last_part
+                street = ", ".join(street_parts[:-1]).strip()
+            else:
+                street = ", ".join(street_parts).strip()
+        else:
+            street = ", ".join(street_parts).strip()
 
     return {
         "recipient_name": name,
@@ -174,7 +188,7 @@ def parse_easyparcel_row(row):
     recipient_blocks = re.split(r'(?i)(?=Nama penerima :)', all_text)
     recipient_blocks = [b.strip() for b in recipient_blocks if b.strip()]
 
-    if len(recipient_blocks) <= 1:
+    if len(recipient_blocks) <= 1 and "Alamat penerima" not in all_text:
         # Single recipient - use original column values
         addr_parts = [a for a in [addr_raw, city_raw, pcode_raw, state_raw] if a]
         full_address = ", ".join(addr_parts) if addr_parts else ""
@@ -197,7 +211,7 @@ def parse_easyparcel_row(row):
         # Extract fields from this block
         name_match = re.search(r'Nama penerima\s*:\s*(.+?)(?=\n|Alamat|$)', block, re.IGNORECASE)
         phone_match = re.search(r'No\.\s*Tel\s*penerima\s*:\s*([0-9\s-]+)', block, re.IGNORECASE)
-        addr_match = re.search(r'Alamat penerima\s*:\s*(.+?)(?=\n|Poskod|Kawasan|Bandar|Negeri|$)', block, re.IGNORECASE | re.DOTALL)
+        addr_match = re.search(r'Alamat penerima\s*:\s*(.+?)(?=Poskod|Kawasan|Bandar|Negeri|No\. Tel|Email|$)', block, re.IGNORECASE | re.DOTALL)
         pcode_match = re.search(r'Poskod\s*:\s*(\d{5})', block, re.IGNORECASE)
         city_match = re.search(r'Bandar\s*:\s*(.+?)(?=\n|Negeri|$)', block, re.IGNORECASE)
         state_match = re.search(r'Negeri\s*:\s*(.+?)(?=\n|$)', block, re.IGNORECASE)
@@ -228,8 +242,9 @@ def parse_easyparcel_row(row):
     # Build output — fill missing fields from column defaults
     output = []
     for r in results:
-        addr_parts = r.get("address_parts", [])
-        full_address = ", ".join(addr_parts) if addr_parts else addr_raw or ""
+        addr_val = r.get("recipient_address", "")
+        if not addr_val:
+            addr_val = addr_raw or ""
 
         # State normalization
         state_val = r.get("recipient_state", state_raw or "").strip()
@@ -240,7 +255,7 @@ def parse_easyparcel_row(row):
         output.append({
             "recipient_name": r.get("recipient_name", name_raw),
             "recipient_phone": r.get("recipient_phone", phone_raw or ""),
-            "recipient_address": full_address,
+            "recipient_address": addr_val,
             "recipient_postcode": r.get("recipient_postcode", pcode_raw or ""),
             "recipient_city": r.get("recipient_city", city_raw or ""),
             "recipient_state": state_val,

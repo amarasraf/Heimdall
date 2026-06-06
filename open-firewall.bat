@@ -1,13 +1,13 @@
 @echo off
 echo ============================================
-echo  Opening firewall for AlamatPintar (port 8000)
+echo  Opening firewall for Heimdall (port 8000)
 echo ============================================
 echo.
 echo Right-click this file and select "Run as administrator"
 echo.
 pause
 
-netsh advfirewall firewall add rule name="AlamatPintar" dir=in action=allow protocol=TCP localport=8000
+netsh advfirewall firewall add rule name="Heimdall" dir=in action=allow protocol=TCP localport=8000
 
 echo.
 echo Done! Your brother can now access:

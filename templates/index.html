@@ -3,200 +3,434 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AlamatPintar — Address Parser</title>
+<title>Heimdall - Address Parser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+  :root {
+    --bg-color: #0b0f19;
+    --card-bg: rgba(30, 41, 59, 0.6);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --primary: #8b5cf6;
+    --primary-hover: #7c3aed;
+    --secondary: #334155;
+    --secondary-hover: #475569;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --success: #10b981;
+    --error: #ef4444;
+    --info: #3b82f6;
+  }
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    background: #0f172a;
-    color: #e2e8f0;
+    font-family: 'Outfit', sans-serif;
+    background: linear-gradient(135deg, var(--bg-color) 0%, #171124 100%);
+    color: var(--text-main);
     min-height: 100vh;
     padding: 20px;
+    display: flex;
+    justify-content: center;
   }
-  .container { max-width: 800px; margin: 0 auto; }
+  .container { 
+    width: 100%;
+    max-width: 900px; 
+    animation: fadeIn 0.8s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   .header {
     text-align: center;
-    padding: 30px 0 20px;
+    padding: 40px 0 30px;
+    position: relative;
   }
   .header h1 {
-    font-size: 1.8rem;
-    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #a78bfa, #3b82f6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
   }
-  .header p { color: #64748b; font-size: 0.85rem; margin-top: 4px; }
+  .header p { 
+    color: var(--text-muted); 
+    font-size: 1rem; 
+    font-weight: 300;
+  }
+  
+  .logout-btn {
+    position: absolute;
+    top: 20px;
+    right: 0;
+    background: transparent;
+    border: 1px solid var(--card-border);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .logout-btn:hover {
+    color: var(--text-main);
+    background: rgba(255,255,255,0.1);
+  }
 
   .card {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 16px;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 30px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
-  .card h2 { font-size: 1rem; margin-bottom: 12px; color: #94a3b8; }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
+  }
+  .card h2 { 
+    font-size: 1.25rem; 
+    font-weight: 600;
+    margin-bottom: 16px; 
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .auth-form {
+    max-width: 400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .auth-form input {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid var(--card-border);
+    color: var(--text-main);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    width: 100%;
+    transition: all 0.3s;
+  }
+  .auth-form input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+  }
 
   textarea {
     width: 100%;
-    min-height: 140px;
-    background: #0f172a;
-    border: 1px solid #334155;
-    border-radius: 8px;
-    color: #e2e8f0;
-    padding: 12px;
-    font-family: 'Consolas', monospace;
-    font-size: 0.85rem;
+    min-height: 120px;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    color: var(--text-main);
+    padding: 16px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.5;
     resize: vertical;
+    transition: all 0.3s;
   }
-  textarea:focus { outline: 2px solid #3b82f6; border-color: transparent; }
+  textarea:focus { 
+    outline: none; 
+    border-color: var(--primary); 
+    box-shadow: inset 0 0 0 1px var(--primary);
+  }
 
   .btn {
-    background: #3b82f6;
+    background: var(--primary);
     color: white;
     border: none;
     border-radius: 8px;
-    padding: 10px 20px;
-    font-size: 0.9rem;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-family: inherit;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.3);
   }
-  .btn:hover { background: #2563eb; }
-  .btn.secondary { background: #475569; }
-  .btn.secondary:hover { background: #64748b; }
+  .btn:hover { 
+    background: var(--primary-hover); 
+    transform: translateY(-1px);
+    box-shadow: 0 6px 8px -1px rgba(139, 92, 246, 0.4);
+  }
+  .btn:active { transform: translateY(1px); box-shadow: none; }
+  
+  .btn.secondary { 
+    background: var(--secondary); 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  }
+  .btn.secondary:hover { 
+    background: var(--secondary-hover); 
+  }
 
-  .actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .actions { 
+    display: flex; 
+    gap: 12px; 
+    margin-top: 16px; 
+  }
 
   .table-wrapper {
     overflow-x: auto;
-    margin-top: 12px;
+    margin-top: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+    background: rgba(15, 23, 42, 0.4);
   }
   th {
-    background: #334155;
-    color: #94a3b8;
-    padding: 8px 10px;
+    background: rgba(30, 41, 59, 0.8);
+    color: var(--text-muted);
+    padding: 14px 16px;
     text-align: left;
     font-weight: 600;
     white-space: nowrap;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
   }
   td {
-    padding: 8px 10px;
-    border-bottom: 1px solid #1e293b;
-    color: #cbd5e1;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--card-border);
+    color: var(--text-main);
   }
-  tr:hover td { background: #1e293b; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255, 255, 255, 0.03); }
 
   .status {
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    margin-top: 8px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn 0.4s ease-out;
+    border-left: 4px solid transparent;
   }
-  .status.ok { background: #064e3b; color: #6ee7b7; }
-  .status.err { background: #450a0a; color: #fca5a5; }
-  .status.info { background: #1e3a5f; color: #93c5fd; }
+  .status.ok { 
+    background: rgba(16, 185, 129, 0.1); 
+    color: #34d399; 
+    border-color: var(--success);
+  }
+  .status.err { 
+    background: rgba(239, 68, 68, 0.1); 
+    color: #fca5a5; 
+    border-color: var(--error);
+  }
+  .status.info { 
+    background: rgba(59, 130, 246, 0.1); 
+    color: #93c5fd; 
+    border-color: var(--info);
+  }
 
   .sample-btn {
-    display: inline-block;
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 0.75rem;
-    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--secondary);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
     cursor: pointer;
-    margin: 3px;
-    transition: border-color 0.2s;
+    margin: 4px;
+    transition: all 0.2s;
   }
-  .sample-btn:hover { border-color: #3b82f6; color: #60a5fa; }
+  .sample-btn:hover { 
+    border-color: var(--primary); 
+    color: var(--text-main); 
+    background: rgba(139, 92, 246, 0.1);
+  }
 
-  .hidden { display: none; }
+  .hidden { display: none !important; }
 
   .file-label {
-    display: inline-block;
-    background: #334155;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--secondary);
     border-radius: 8px;
-    padding: 10px 20px;
-    font-size: 0.9rem;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px dashed rgba(255,255,255,0.2);
+    width: 100%;
+    margin-top: 10px;
   }
-  .file-label:hover { background: #475569; }
+  .file-label:hover { 
+    background: var(--secondary-hover); 
+    border-color: var(--primary);
+  }
+
+  .emoji-icon { font-size: 1.2em; }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <h1>📍 AlamatPintar</h1>
+    <h1><span class="emoji-icon">📦</span> Heimdall</h1>
     <p>WhatsApp order → Courier-ready CSV · For EasyParcel, J&T, Ninja Van</p>
+    <button id="logoutBtn" class="logout-btn hidden" onclick="handleSignOut()">Logout</button>
   </div>
 
-  <!-- Single Parse -->
-  <div class="card">
-    <h2>✏️ Parse Single Address</h2>
-    <textarea id="singleInput" placeholder="Paste a messy address here...
-
-Examples:
-Amar Mustapha, 0171234567, No 45 Jalan Bukit, Taman Desa, 43700 Beranang, Selangor
-Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Sembilan"></textarea>
-    <div style="margin: 8px 0;">
-      <span class="sample-btn" onclick="fillSample('Amar Mustapha, 0171234567, No 45 Jalan Bukit, Taman Desa, 43700 Beranang, Selangor')">Sample 1</span>
-      <span class="sample-btn" onclick="fillSample('Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Sembilan')">Sample 2</span>
-      <span class="sample-btn" onclick="fillSample('Kak Long | 0198765432 | No 8, Jalan SS15/4, Subang Jaya, 47500 Selangor')">Sample 3</span>
-      <span class="sample-btn" onclick="fillSample('Nama penerima : KHAIRIL AMIRIN Alamat penerima : Kolej Kediaman Satria Kasturi Alamat kedua : UTeM Durian Tunggal No. Tel penerima : 60198367089 Poskod : 76100 Nama penerima : SITI NUR HAFIZAH Alamat penerima : JALAN PULAU MELAKA 8, PULAU MELAKA, MASJID SELAT MELAKA Alamat kedua : 75000, MELAKA No. Tel penerima : 601111134347 Poskod : 75000')">Multi-Recipient</span>
+  <!-- Auth Section -->
+  <div id="auth-section" class="card">
+    <h2 style="justify-content:center;">Welcome! Please Sign In</h2>
+    <div class="auth-form">
+      <input type="email" id="email" placeholder="Email Address">
+      <input type="password" id="password" placeholder="Password">
+      <button class="btn" onclick="handleSignIn()">Login</button>
+      <button class="btn secondary" onclick="handleSignUp()">Sign Up (New Account)</button>
+      <div id="authError" class="status err hidden" style="margin-top: 8px;"></div>
+      <div id="authSuccess" class="status ok hidden" style="margin-top: 8px;"></div>
     </div>
-    <div class="actions">
-      <button class="btn" onclick="parseSingle()">Parse</button>
-      <button class="btn secondary" onclick="clearSingle()">Clear</button>
-    </div>
-    <div id="singleResult" class="hidden"></div>
   </div>
 
-  <!-- Bulk Upload -->
-  <div class="card">
-    <h2>📂 Bulk Upload (CSV)</h2>
-    <p style="font-size:0.8rem;color:#64748b;margin-bottom:10px;">
-      Upload any CSV &mdash; <code>raw_text</code> (one address per row), <strong>EasyParcel export</strong> (with recipient columns),
-      or even files with multiple recipients crammed into one row.
-      The parser auto-detects the format and splits multi-recipient rows.
-    </p>
-    <label class="file-label" for="csvFile">Choose CSV file</label>
-    <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="uploadCSV()">
-    <div id="bulkResult"></div>
-  </div>
-
-  <!-- Result Table -->
-  <div id="resultTable" class="hidden">
+  <!-- App Section (Hidden by default) -->
+  <div id="app-section" class="hidden">
+    <!-- Text Parse -->
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-        <h2>📊 Results</h2>
-        <div>
-          <button class="btn secondary" onclick="downloadCSV()">⬇ Download CSV</button>
-        </div>
+      <h2><span class="emoji-icon">✏️</span> Parse Address Text (Auto-Detect)</h2>
+      <textarea id="singleInput" placeholder="Paste a messy address or multiple recipients here..."></textarea>
+      <div style="margin: 12px 0;">
+        <span class="sample-btn" onclick="fillSample('Amar Mustapha, 0171234567, No 45 Jalan Bukit, Taman Desa, 43700 Beranang, Selangor')">Sample 1</span>
+        <span class="sample-btn" onclick="fillSample('Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Sembilan')">Sample 2</span>
+        <span class="sample-btn" onclick="fillSample('Kak Long | 0198765432 | No 8, Jalan SS15/4, Subang Jaya, 47500 Selangor')">Sample 3</span>
+        <span class="sample-btn" onclick="fillSample('Nama penerima : KHAIRIL AMIRIN Alamat penerima : Kolej Kediaman Satria Kasturi Alamat kedua : UTeM Durian Tunggal No. Tel penerima : 60198367089 Poskod : 76100 Nama penerima : SITI NUR HAFIZAH Alamat penerima : JALAN PULAU MELAKA 8, PULAU MELAKA, MASJID SELAT MELAKA Alamat kedua : 75000, MELAKA No. Tel penerima : 601111134347 Poskod : 75000')">Multi-Recipient</span>
       </div>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Address</th>
-              <th>Postcode</th>
-              <th>State</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
+      <div class="actions">
+        <button class="btn" style="flex:1" onclick="parseSingle()">Parse Address</button>
+        <button class="btn secondary" style="width:auto" onclick="clearSingle()">Clear</button>
+      </div>
+      <div id="singleResult" class="hidden"></div>
+    </div>
+
+    <!-- Bulk Upload -->
+    <div class="card">
+      <h2><span class="emoji-icon">📂</span> Bulk Upload (CSV)</h2>
+      <p style="font-size:0.9rem;color:var(--text-muted);line-height:1.5;">
+        Upload any CSV — <code>raw_text</code> (one address per row), <strong>EasyParcel export</strong> (with recipient columns),
+        or even files with multiple recipients crammed into one row.
+      </p>
+      <label class="file-label" for="csvFile">
+        <span>📄 Choose CSV File</span>
+      </label>
+      <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="uploadCSV()">
+      <div id="bulkResult"></div>
+    </div>
+
+    <!-- Result Table -->
+    <div id="resultTable" class="hidden">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+          <h2><span class="emoji-icon">📊</span> Results</h2>
+          <button class="btn secondary" style="width:auto" onclick="downloadCSV()">⬇ Download CSV</button>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Postcode</th>
+                <th>State</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <script>
+// --- Supabase Authentication ---
+const supabaseUrl = "{{SUPABASE_URL}}";
+const supabaseKey = "{{SUPABASE_KEY}}";
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+let currentSession = null;
+
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  currentSession = session;
+  if (session) {
+    document.getElementById('auth-section').classList.add('hidden');
+    document.getElementById('app-section').classList.remove('hidden');
+    document.getElementById('logoutBtn').classList.remove('hidden');
+  } else {
+    document.getElementById('auth-section').classList.remove('hidden');
+    document.getElementById('app-section').classList.add('hidden');
+    document.getElementById('logoutBtn').classList.add('hidden');
+  }
+});
+
+async function handleSignUp() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const errEl = document.getElementById('authError');
+  const sucEl = document.getElementById('authSuccess');
+  errEl.classList.add('hidden');
+  sucEl.classList.add('hidden');
+  
+  if (!email || !password) {
+    errEl.innerHTML = "<strong>✗</strong> &nbsp; Please enter email and password";
+    errEl.classList.remove('hidden');
+    return;
+  }
+  
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  if (error) {
+    errEl.innerHTML = `<strong>✗</strong> &nbsp; ${error.message}`;
+    errEl.classList.remove('hidden');
+  } else {
+    sucEl.innerHTML = "<strong>✓</strong> &nbsp; Successfully signed up! Logging in...";
+    sucEl.classList.remove('hidden');
+  }
+}
+
+async function handleSignIn() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const errEl = document.getElementById('authError');
+  errEl.classList.add('hidden');
+  
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    errEl.innerHTML = `<strong>✗</strong> &nbsp; ${error.message}`;
+    errEl.classList.remove('hidden');
+  }
+}
+
+async function handleSignOut() {
+  await supabaseClient.auth.signOut();
+}
+
+// --- App Logic ---
 let lastResults = [];
 
 function fillSample(text) {
@@ -211,19 +445,44 @@ function clearSingle() {
 function parseSingle() {
   const text = document.getElementById('singleInput').value.trim();
   if (!text) { alert('Paste an address first!'); return; }
+  if (!currentSession) { alert('Please login first!'); return; }
 
   const el = document.getElementById('singleResult');
   el.classList.remove('hidden');
+  el.innerHTML = `<div class="status info">⏳ Parsing...</div>`;
 
-  fetch('/parse?text=' + encodeURIComponent(text))
-    .then(r => r.json())
+  fetch('/parse', {
+    method: 'POST',
+    headers: { 
+      'Authorization': `Bearer ${currentSession.access_token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ text: text })
+  })
+    .then(async r => {
+      if(!r.ok) {
+         const txt = await r.text();
+         throw new Error(txt || 'Authentication required');
+      }
+      return r.json();
+    })
     .then(data => {
-      el.innerHTML = `<div class="status ok">✓ ${data.recipient_name} | ${data.phone} | ${data.street} | ${data.postcode} | ${data.state}</div>`;
-      lastResults = [data];
-      renderTable([data]);
+      if (data.length > 1) {
+        el.innerHTML = `<div class="status ok"><strong>✓</strong> &nbsp; Parsed ${data.length} addresses successfully</div>`;
+      } else {
+        const r = data[0];
+        const name = r.recipient_name || '-';
+        const phone = r.phone || r.recipient_phone || '-';
+        const street = r.street || r.recipient_address || '-';
+        const pc = r.postcode || r.recipient_postcode || '-';
+        const st = r.state || r.recipient_state || '-';
+        el.innerHTML = `<div class="status ok"><strong>✓</strong> &nbsp; ${name} | ${phone} | ${street} | ${pc} | ${st}</div>`;
+      }
+      lastResults = data;
+      renderTable(data);
     })
     .catch(e => {
-      el.innerHTML = `<div class="status err">✗ Error: ${e.message}</div>`;
+      el.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
     });
 }
 
@@ -231,6 +490,7 @@ function uploadCSV() {
   const fileInput = document.getElementById('csvFile');
   const file = fileInput.files[0];
   if (!file) return;
+  if (!currentSession) { alert('Please login first!'); return; }
 
   const el = document.getElementById('bulkResult');
   el.innerHTML = `<div class="status info">⏳ Processing ${file.name}...</div>`;
@@ -238,18 +498,27 @@ function uploadCSV() {
   const formData = new FormData();
   formData.append('file', file);
 
-  fetch('/upload', { method: 'POST', body: formData })
-    .then(r => {
-      if (!r.ok) throw new Error('Upload failed');
+  fetch('/upload', { 
+    method: 'POST', 
+    body: formData,
+    headers: { 
+      'Authorization': `Bearer ${currentSession.access_token}`
+    }
+  })
+    .then(async r => {
+      if(!r.ok) {
+         const txt = await r.text();
+         throw new Error(txt || 'Authentication required');
+      }
       return r.json();
     })
     .then(data => {
-      el.innerHTML = `<div class="status ok">✓ ${data.results} orders parsed successfully</div>`;
+      el.innerHTML = `<div class="status ok"><strong>✓</strong> &nbsp; ${data.results} orders parsed successfully</div>`;
       lastResults = data.data;
       renderTable(data.data);
     })
     .catch(e => {
-      el.innerHTML = `<div class="status err">✗ ${e.message}</div>`;
+      el.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; ${e.message}</div>`;
     });
 }
 
@@ -257,8 +526,13 @@ function renderTable(data) {
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = '';
   data.forEach(r => {
+    const name = r.recipient_name || '-';
+    const phone = r.phone || r.recipient_phone || '-';
+    const street = r.street || r.recipient_address || '-';
+    const postcode = r.postcode || r.recipient_postcode || '-';
+    const state = r.state || r.recipient_state || '-';
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.recipient_name}</td><td>${r.phone}</td><td>${r.street}</td><td>${r.postcode}</td><td>${r.state}</td>`;
+    tr.innerHTML = `<td>${name}</td><td>${phone}</td><td>${street}</td><td>${postcode}</td><td>${state}</td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('resultTable').classList.remove('hidden');
@@ -272,12 +546,12 @@ function downloadCSV() {
 
   lastResults.forEach(r => {
     const row = [
-      `"${r.recipient_name || ''}"`,
-      `"${r.phone || ''}"`,
-      `"${r.street || ''}"`,
-      `"${r.postcode || ''}"`,
-      `"${r.city || ''}"`,
-      `"${r.state || ''}"`,
+      `"${(r.recipient_name || '').replace(/"/g, '""')}"`,
+      `"${(r.phone || r.recipient_phone || '').replace(/"/g, '""')}"`,
+      `"${(r.street || r.recipient_address || '').replace(/"/g, '""')}"`,
+      `"${(r.postcode || r.recipient_postcode || '').replace(/"/g, '""')}"`,
+      `"${(r.city || r.recipient_city || '').replace(/"/g, '""')}"`,
+      `"${(r.state || r.recipient_state || '').replace(/"/g, '""')}"`,
       '"General merchandise"',
       '"100"',
       '"0.5"',
@@ -290,7 +564,7 @@ function downloadCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'easyparcel_ready.csv';
+  a.download = 'heimdall_easyparcel.csv';
   a.click();
   URL.revokeObjectURL(url);
 }

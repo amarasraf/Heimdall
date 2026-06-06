@@ -1,0 +1,10 @@
+.git
+.gitignore
+__pycache__
+*.db
+*.exe
+*.zip
+*.bat
+*.sh
+.gemini
+scratch/
