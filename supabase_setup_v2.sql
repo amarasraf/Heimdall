@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Add JSONB column for courier keys (safe to run multiple times)
+ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS courier_keys JSONB DEFAULT '{}'::jsonb;
+
 -- 2. Turn on Row Level Security (RLS)
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 

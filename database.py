@@ -70,3 +70,22 @@ def extend_subscription(user_id: str, days: int = 30):
     except Exception as e:
         print(f"[ERROR] extend_subscription: {e}")
         return False
+
+def save_user_keys(user_id: str, keys: dict):
+    if not supabase:
+        return False
+    try:
+        supabase.table("user_profiles").upsert({
+            "user_id": user_id,
+            "courier_keys": keys
+        }).execute()
+        return True
+    except Exception as e:
+        print(f"[ERROR] save_user_keys: {e}")
+        return False
+
+def get_user_keys(user_id: str):
+    profile = get_user_profile(user_id)
+    if profile and profile.get("courier_keys"):
+        return profile["courier_keys"]
+    return {}

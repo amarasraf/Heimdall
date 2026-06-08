@@ -10,119 +10,155 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --bg-color: #0b0f19;
-    --card-bg: rgba(30, 41, 59, 0.6);
-    --card-border: rgba(255, 255, 255, 0.08);
+    --bg-base: #050505;
+    --bg-surface: rgba(20, 20, 25, 0.6);
+    --card-border: rgba(255, 255, 255, 0.05);
+    --card-glow: rgba(139, 92, 246, 0.15);
     --primary: #8b5cf6;
     --primary-hover: #7c3aed;
-    --secondary: #334155;
-    --secondary-hover: #475569;
+    --primary-light: #a78bfa;
+    --secondary: #27272a;
+    --secondary-hover: #3f3f46;
     --text-main: #f8fafc;
-    --text-muted: #94a3b8;
+    --text-muted: #a1a1aa;
     --success: #10b981;
-    --error: #ef4444;
+    --error: #f43f5e;
     --info: #3b82f6;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  
   body {
     font-family: 'Outfit', sans-serif;
-    background: linear-gradient(135deg, var(--bg-color) 0%, #171124 100%);
+    background-color: var(--bg-base);
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
+    background-attachment: fixed;
     color: var(--text-main);
     min-height: 100vh;
-    padding: 20px;
+    padding: 40px 20px;
     display: flex;
     justify-content: center;
+    line-height: 1.6;
   }
+  
   .container { 
     width: 100%;
-    max-width: 900px; 
-    animation: fadeIn 0.8s ease-out;
+    max-width: 960px; 
+    animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+  @keyframes slideUp {
+    0% { opacity: 0; transform: translateY(30px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
 
   .header {
     text-align: center;
-    padding: 40px 0 30px;
+    padding: 20px 0 50px;
     position: relative;
   }
+  
   .header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #a78bfa, #3b82f6);
+    font-size: 3.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #e2e8f0 0%, #a78bfa 50%, #3b82f6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    margin-bottom: 8px;
-    letter-spacing: -0.5px;
+    margin-bottom: 12px;
+    letter-spacing: -1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
   }
+  
   .header p { 
     color: var(--text-muted); 
-    font-size: 1rem; 
+    font-size: 1.15rem; 
     font-weight: 300;
+    max-width: 600px;
+    margin: 0 auto;
   }
   
   .logout-btn {
     position: absolute;
-    top: 20px;
+    top: 0;
     right: 0;
-    background: transparent;
+    background: var(--secondary);
     border: 1px solid var(--card-border);
-    color: var(--text-muted);
-    padding: 6px 12px;
-    border-radius: 6px;
+    color: var(--text-main);
+    padding: 8px 16px;
+    border-radius: 8px;
     font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
   }
   .logout-btn:hover {
-    color: var(--text-main);
-    background: rgba(255,255,255,0.1);
+    background: var(--error);
+    border-color: var(--error);
+    box-shadow: 0 0 15px rgba(244, 63, 94, 0.3);
   }
 
   .sub-badge {
     position: absolute;
-    top: 20px;
+    top: 0;
     left: 0;
     background: rgba(16, 185, 129, 0.1);
-    border: 1px solid var(--success);
-    color: #34d399;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 0.85rem;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--success);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
     font-weight: 600;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
   }
   .sub-badge.expired {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: var(--error);
-    color: #fca5a5;
+    background: rgba(244, 63, 94, 0.1);
+    border-color: rgba(244, 63, 94, 0.3);
+    color: var(--error);
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.1);
   }
 
   .card {
-    background: var(--card-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border: 1px solid var(--card-border);
-    border-radius: 16px;
-    padding: 30px;
-    margin-bottom: 24px;
-    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 20px;
+    padding: 35px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+    position: relative;
+    overflow: hidden;
   }
+  
+  .card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  }
+  
   .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4), 0 0 20px 0 var(--card-glow);
   }
+  
   .card h2 { 
-    font-size: 1.25rem; 
-    font-weight: 600;
-    margin-bottom: 16px; 
+    font-size: 1.4rem; 
+    font-weight: 700;
+    margin-bottom: 20px; 
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 12px;
+    color: #fff;
   }
 
   .auth-form {
@@ -130,155 +166,180 @@
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
   }
+  
   .auth-form input {
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid var(--card-border);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255,255,255,0.1);
     color: var(--text-main);
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 0.95rem;
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 1rem;
     font-family: inherit;
     width: 100%;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
   }
+  
   .auth-form input:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
+    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
   }
 
   textarea {
     width: 100%;
-    min-height: 120px;
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid var(--card-border);
-    border-radius: 12px;
+    min-height: 140px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
     color: var(--text-main);
-    padding: 16px;
+    padding: 20px;
     font-family: inherit;
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: 1rem;
+    line-height: 1.6;
     resize: vertical;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
   }
   textarea:focus { 
     outline: none; 
-    border-color: var(--primary); 
-    box-shadow: inset 0 0 0 1px var(--primary);
+    border-color: var(--primary-light); 
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
   }
 
   .btn {
-    background: var(--primary);
+    background: linear-gradient(135deg, var(--primary), #6d28d9);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 1rem;
+    border-radius: 10px;
+    padding: 14px 28px;
+    font-size: 1.05rem;
     font-family: inherit;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     width: 100%;
-    box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 15px rgba(109, 40, 217, 0.4);
+    position: relative;
+    overflow: hidden;
   }
+  
+  .btn::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    transform: scale(0.5);
+  }
+  
   .btn:hover { 
-    background: var(--primary-hover); 
-    transform: translateY(-1px);
-    box-shadow: 0 6px 8px -1px rgba(139, 92, 246, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(109, 40, 217, 0.5);
   }
-  .btn:active { transform: translateY(1px); box-shadow: none; }
+  
+  .btn:hover::after {
+    opacity: 1;
+    transform: scale(1);
+  }
+  
+  .btn:active { transform: translateY(1px); }
   
   .btn.secondary { 
     background: var(--secondary); 
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
   }
   .btn.secondary:hover { 
     background: var(--secondary-hover); 
+    box-shadow: 0 6px 15px rgba(0,0,0,0.4);
   }
 
   .actions { 
     display: flex; 
-    gap: 12px; 
-    margin-top: 16px; 
+    gap: 16px; 
+    margin-top: 20px; 
   }
 
   .table-wrapper {
     overflow-x: auto;
-    margin-top: 20px;
-    border-radius: 12px;
+    margin-top: 24px;
+    border-radius: 14px;
     border: 1px solid var(--card-border);
+    background: rgba(0,0,0,0.2);
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem;
-    background: rgba(15, 23, 42, 0.4);
+    font-size: 0.95rem;
   }
   th {
-    background: rgba(30, 41, 59, 0.8);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text-muted);
-    padding: 14px 16px;
+    padding: 16px 20px;
     text-align: left;
     font-weight: 600;
     white-space: nowrap;
     text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.5px;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    border-bottom: 1px solid var(--card-border);
   }
   td {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--card-border);
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
     color: var(--text-main);
   }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(255, 255, 255, 0.03); }
+  tr:hover td { background: rgba(255, 255, 255, 0.04); }
 
   .status {
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 0.95rem;
-    margin-top: 16px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 1rem;
+    margin-top: 20px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    animation: fadeIn 0.4s ease-out;
-    border-left: 4px solid transparent;
+    gap: 10px;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    font-weight: 500;
   }
   .status.ok { 
-    background: rgba(16, 185, 129, 0.1); 
+    background: rgba(16, 185, 129, 0.15); 
     color: #34d399; 
-    border-color: var(--success);
+    border: 1px solid rgba(16, 185, 129, 0.3);
   }
   .status.err { 
-    background: rgba(239, 68, 68, 0.1); 
-    color: #fca5a5; 
-    border-color: var(--error);
+    background: rgba(244, 63, 94, 0.15); 
+    color: #fb7185; 
+    border: 1px solid rgba(244, 63, 94, 0.3);
   }
   .status.info { 
-    background: rgba(59, 130, 246, 0.1); 
+    background: rgba(59, 130, 246, 0.15); 
     color: #93c5fd; 
-    border-color: var(--info);
+    border: 1px solid rgba(59, 130, 246, 0.3);
   }
 
   .sample-btn {
     display: inline-flex;
     align-items: center;
-    background: transparent;
-    border: 1px solid var(--secondary);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
     border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 0.8rem;
+    padding: 6px 16px;
+    font-size: 0.85rem;
     color: var(--text-muted);
     cursor: pointer;
-    margin: 4px;
-    transition: all 0.2s;
+    margin: 4px 6px 4px 0;
+    transition: all 0.3s ease;
   }
   .sample-btn:hover { 
     border-color: var(--primary); 
-    color: var(--text-main); 
-    background: rgba(139, 92, 246, 0.1);
+    color: #fff; 
+    background: rgba(139, 92, 246, 0.15);
+    transform: translateY(-1px);
   }
 
   .hidden { display: none !important; }
@@ -287,23 +348,29 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--secondary);
-    border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 1rem;
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px dashed rgba(255,255,255,0.2);
+    transition: all 0.3s ease;
+    border: 2px dashed rgba(255,255,255,0.15);
     width: 100%;
-    margin-top: 10px;
+    margin-top: 15px;
+    color: var(--text-muted);
   }
+  
   .file-label:hover { 
-    background: var(--secondary-hover); 
-    border-color: var(--primary);
+    background: rgba(139, 92, 246, 0.05); 
+    border-color: var(--primary-light);
+    color: #fff;
   }
 
-  .emoji-icon { font-size: 1.2em; }
+  .emoji-icon { 
+    font-size: 1.3em; 
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
 </style>
 </head>
 <body>
@@ -312,7 +379,76 @@
     <div id="subBadge" class="sub-badge hidden">Loading Sub...</div>
     <h1><span class="emoji-icon">📦</span> Heimdall</h1>
     <p>WhatsApp order → Courier-ready CSV · For EasyParcel, J&T, Ninja Van</p>
-    <button id="logoutBtn" class="logout-btn hidden" onclick="handleSignOut()">Logout</button>
+    <div style="position: absolute; top: 0; right: 0; display:flex; gap:10px;">
+      <button id="settingsBtn" class="logout-btn hidden" style="position:relative;" onclick="toggleSettings()">⚙️ Settings</button>
+      <button id="logoutBtn" class="logout-btn hidden" style="position:relative;" onclick="handleSignOut()">Logout</button>
+    </div>
+  </div>
+
+  <!-- Settings Section -->
+  <div id="settings-section" class="card hidden">
+    <h2>⚙️ Configuration & API Keys</h2>
+    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
+      Heimdall allows you to connect your own courier accounts. Enter your API keys below.
+    </p>
+    <div class="auth-form" style="max-width:100%;">
+      <!-- EasyParcel -->
+      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+        <label style="font-weight:600;display:block;margin-bottom:8px;">EasyParcel API Key</label>
+        <input type="password" id="key_ep" placeholder="Enter EasyParcel API Key">
+        <details style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
+          <summary style="cursor:pointer; color:var(--primary-light);">How to get this?</summary>
+          <div style="padding-top:8px;">1. Log into EasyParcel.<br>2. Go to Integrations > API.<br>3. Generate a new API Key and copy it here.</div>
+        </details>
+      </div>
+      <!-- Ninja Van -->
+      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+        <label style="font-weight:600;display:block;margin-bottom:8px;">Ninja Van Credentials</label>
+        <div style="display:flex;gap:10px;">
+          <input type="password" id="key_nv_client" placeholder="Client ID">
+          <input type="password" id="key_nv_secret" placeholder="Client Secret">
+        </div>
+        <details style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
+          <summary style="cursor:pointer; color:var(--primary-light);">How to get this?</summary>
+          <div style="padding-top:8px;">1. Log into Ninja Dashboard.<br>2. Go to Settings > API Keys.<br>3. Copy the Client ID and Client Secret.</div>
+        </details>
+      </div>
+      <!-- J&T Express -->
+      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+        <label style="font-weight:600;display:block;margin-bottom:8px;">J&T Express API Key</label>
+        <input type="password" id="key_jnt" placeholder="Enter J&T Express Key">
+        <details style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
+          <summary style="cursor:pointer; color:var(--primary-light);">How to get this?</summary>
+          <div style="padding-top:8px;">1. Log into J&T VIP Portal.<br>2. Go to Account > API Management.<br>3. Copy your specific API Key.</div>
+        </details>
+      </div>
+      <!-- DHL -->
+      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+        <label style="font-weight:600;display:block;margin-bottom:8px;">DHL eCommerce API Key</label>
+        <div style="display:flex;gap:10px;">
+          <input type="password" id="key_dhl" placeholder="API Key">
+          <input type="password" id="key_dhl_secret" placeholder="API Secret">
+        </div>
+        <details style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
+          <summary style="cursor:pointer; color:var(--primary-light);">How to get this?</summary>
+          <div style="padding-top:8px;">1. Access DHL Customer Portal.<br>2. Navigate to Developer > Credentials.<br>3. Copy both Key and Secret.</div>
+        </details>
+      </div>
+      <!-- City-Link & GDEX -->
+      <div style="display:flex;gap:15px;">
+        <div style="flex:1; background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+          <label style="font-weight:600;display:block;margin-bottom:8px;">City-Link Key</label>
+          <input type="password" id="key_cl" placeholder="City-Link Key">
+        </div>
+        <div style="flex:1; background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
+          <label style="font-weight:600;display:block;margin-bottom:8px;">GDEX Key</label>
+          <input type="password" id="key_gdex" placeholder="GDEX Key">
+        </div>
+      </div>
+      
+      <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
+      <div id="settingsResult" class="hidden" style="margin-top:10px;"></div>
+    </div>
   </div>
 
   <!-- Auth Section -->
@@ -377,7 +513,15 @@
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
           <h2><span class="emoji-icon">📊</span> Results</h2>
-          <button class="btn secondary" style="width:auto" onclick="downloadCSV()">⬇ Download CSV</button>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn" style="width:auto;background:linear-gradient(135deg, #10b981, #059669);font-size:0.9rem;padding:10px 16px;" onclick="submitEasyParcel()">🚀 EasyParcel</button>
+            <button class="btn" style="width:auto;background:linear-gradient(135deg, #ef4444, #b91c1c);font-size:0.9rem;padding:10px 16px;" onclick="submitNinjaVan()">🥷 Ninja Van</button>
+            <button class="btn" style="width:auto;background:linear-gradient(135deg, #dc2626, #991b1b);font-size:0.9rem;padding:10px 16px;" onclick="submitJNT()">🚚 J&T</button>
+            <button class="btn" style="width:auto;background:linear-gradient(135deg, #eab308, #a16207);color:#fff;font-size:0.9rem;padding:10px 16px;" onclick="submitDHL()">📦 DHL</button>
+            <button class="btn" style="width:auto;background:linear-gradient(135deg, #f97316, #c2410c);color:#fff;font-size:0.9rem;padding:10px 16px;" onclick="submitCityLink()">🏙️ City-Link</button>
+            <button class="btn" style="width:auto;background:linear-gradient(135deg, #0ea5e9, #0369a1);color:#fff;font-size:0.9rem;padding:10px 16px;" onclick="submitGDEX()">✈️ GDEX</button>
+            <button class="btn secondary" style="width:auto;font-size:0.9rem;padding:10px 16px;" onclick="downloadCSV()">⬇ CSV</button>
+          </div>
         </div>
         <div class="table-wrapper">
           <table>
@@ -393,6 +537,7 @@
             <tbody id="tableBody"></tbody>
           </table>
         </div>
+        <div id="epResult" class="hidden" style="margin-top:20px;"></div>
       </div>
     </div>
   </div>
@@ -468,12 +613,15 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   if (session) {
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('logoutBtn').classList.remove('hidden');
+    document.getElementById('settingsBtn').classList.remove('hidden');
     checkSubscription();
   } else {
     document.getElementById('auth-section').classList.remove('hidden');
     document.getElementById('app-section').classList.add('hidden');
+    document.getElementById('settings-section').classList.add('hidden');
     document.getElementById('subscription-section').classList.add('hidden');
     document.getElementById('logoutBtn').classList.add('hidden');
+    document.getElementById('settingsBtn').classList.add('hidden');
     document.getElementById('subBadge').classList.add('hidden');
   }
 });
@@ -517,6 +665,82 @@ async function handleSignIn() {
 
 async function handleSignOut() {
   await supabaseClient.auth.signOut();
+}
+
+// --- Settings Logic ---
+function toggleSettings() {
+  const appSec = document.getElementById('app-section');
+  const setSec = document.getElementById('settings-section');
+  if (setSec.classList.contains('hidden')) {
+    appSec.classList.add('hidden');
+    setSec.classList.remove('hidden');
+    document.getElementById('settingsBtn').innerHTML = '⬅ Back to App';
+    loadSettings();
+  } else {
+    setSec.classList.add('hidden');
+    appSec.classList.remove('hidden');
+    document.getElementById('settingsBtn').innerHTML = '⚙️ Settings';
+  }
+}
+
+async function loadSettings() {
+  if (!currentSession) return;
+  try {
+    const r = await fetch('/api-keys', {
+      headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
+    });
+    const keys = await r.json();
+    document.getElementById('key_ep').value = keys.easyparcel || '';
+    document.getElementById('key_nv_client').value = keys.ninjavan_client_id || '';
+    document.getElementById('key_nv_secret').value = keys.ninjavan_client_secret || '';
+    document.getElementById('key_jnt').value = keys.jnt || '';
+    document.getElementById('key_dhl').value = keys.dhl_key || '';
+    document.getElementById('key_dhl_secret').value = keys.dhl_secret || '';
+    document.getElementById('key_cl').value = keys.citylink || '';
+    document.getElementById('key_gdex').value = keys.gdex || '';
+  } catch(e) {
+    console.error("Error loading keys", e);
+  }
+}
+
+async function saveSettings() {
+  if (!currentSession) return;
+  const btn = document.querySelector('#settings-section .btn');
+  const res = document.getElementById('settingsResult');
+  btn.innerHTML = '⏳ Saving...';
+  
+  const keys = {
+    easyparcel: document.getElementById('key_ep').value,
+    ninjavan_client_id: document.getElementById('key_nv_client').value,
+    ninjavan_client_secret: document.getElementById('key_nv_secret').value,
+    jnt: document.getElementById('key_jnt').value,
+    dhl_key: document.getElementById('key_dhl').value,
+    dhl_secret: document.getElementById('key_dhl_secret').value,
+    citylink: document.getElementById('key_cl').value,
+    gdex: document.getElementById('key_gdex').value
+  };
+
+  try {
+    const r = await fetch('/api-keys', {
+      method: 'POST',
+      headers: { 
+        'Authorization': `Bearer ${currentSession.access_token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ keys })
+    });
+    if (r.ok) {
+      res.innerHTML = `<div class="status ok"><strong>✓</strong> Keys saved successfully!</div>`;
+      res.classList.remove('hidden');
+    } else {
+      throw new Error('Failed to save');
+    }
+  } catch(e) {
+    res.innerHTML = `<div class="status err"><strong>✗</strong> Error saving keys.</div>`;
+    res.classList.remove('hidden');
+  }
+  btn.innerHTML = '💾 Save Settings';
+  setTimeout(() => res.classList.add('hidden'), 3000);
 }
 
 // --- App Logic ---
@@ -624,6 +848,7 @@ function uploadCSV() {
 function renderTable(data) {
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = '';
+  document.getElementById('epResult').classList.add('hidden');
   data.forEach(r => {
     const name = r.recipient_name || '-';
     const phone = r.phone || r.recipient_phone || '-';
@@ -635,6 +860,186 @@ function renderTable(data) {
     tbody.appendChild(tr);
   });
   document.getElementById('resultTable').classList.remove('hidden');
+}
+
+function submitEasyParcel() {
+  if (lastResults.length === 0) return;
+  const epResult = document.getElementById('epResult');
+  epResult.classList.remove('hidden');
+  epResult.innerHTML = `<div class="status info">⏳ Submitting to EasyParcel API...</div>`;
+
+  fetch('/submit-easyparcel', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${currentSession.access_token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ orders: lastResults })
+  })
+  .then(async r => {
+    if(!r.ok) throw new Error('Failed to submit');
+    return r.json();
+  })
+  .then(data => {
+    if(data.status === 'success') {
+      let msg = data.message || "Orders successfully created in EasyParcel!";
+      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
+      epResult.innerHTML = `<div class="status ok"><strong>✓</strong> &nbsp; ${msg}</div>`;
+    }
+  })
+  .catch(e => {
+    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
+  });
+}
+
+function submitNinjaVan() {
+  if (lastResults.length === 0) return;
+  const epResult = document.getElementById('epResult');
+  epResult.classList.remove('hidden');
+  epResult.innerHTML = `<div class="status info">⏳ Submitting to Ninja Van API...</div>`;
+
+  fetch('/submit-ninjavan', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${currentSession.access_token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ orders: lastResults })
+  })
+  .then(async r => {
+    if(!r.ok) throw new Error('Failed to submit');
+    return r.json();
+  })
+  .then(data => {
+    if(data.status === 'success') {
+      let msg = data.message || "Orders successfully created in Ninja Van!";
+      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
+      epResult.innerHTML = `<div class="status ok" style="border-color:#ef4444; color:#f87171; background:rgba(239,68,68,0.1)"><strong>✓</strong> &nbsp; ${msg}</div>`;
+    }
+  })
+  .catch(e => {
+    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
+  });
+}
+
+function submitJNT() {
+  if (lastResults.length === 0) return;
+  const epResult = document.getElementById('epResult');
+  epResult.classList.remove('hidden');
+  epResult.innerHTML = `<div class="status info">⏳ Submitting to J&T Express API...</div>`;
+
+  fetch('/submit-jnt', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${currentSession.access_token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ orders: lastResults })
+  })
+  .then(async r => {
+    if(!r.ok) throw new Error('Failed to submit');
+    return r.json();
+  })
+  .then(data => {
+    if(data.status === 'success') {
+      let msg = data.message || "Orders successfully created in J&T Express!";
+      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
+      epResult.innerHTML = `<div class="status ok" style="border-color:#dc2626; color:#fca5a5; background:rgba(220,38,38,0.1)"><strong>✓</strong> &nbsp; ${msg}</div>`;
+    }
+  })
+  .catch(e => {
+    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
+  });
+}
+
+function submitDHL() {
+  if (lastResults.length === 0) return;
+  const epResult = document.getElementById('epResult');
+  epResult.classList.remove('hidden');
+  epResult.innerHTML = `<div class="status info">⏳ Submitting to DHL API...</div>`;
+
+  fetch('/submit-dhl', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${currentSession.access_token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ orders: lastResults })
+  })
+  .then(async r => {
+    if(!r.ok) throw new Error('Failed to submit');
+    return r.json();
+  })
+  .then(data => {
+    if(data.status === 'success') {
+      let msg = data.message || "Orders successfully created in DHL!";
+      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
+      epResult.innerHTML = `<div class="status ok" style="border-color:#eab308; color:#fde047; background:rgba(234,179,8,0.1)"><strong>✓</strong> &nbsp; ${msg}</div>`;
+    }
+  })
+  .catch(e => {
+    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
+  });
+}
+
+function submitCityLink() {
+  if (lastResults.length === 0) return;
+  const epResult = document.getElementById('epResult');
+  epResult.classList.remove('hidden');
+  epResult.innerHTML = `<div class="status info">⏳ Submitting to City-Link Express...</div>`;
+
+  fetch('/submit-citylink', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${currentSession.access_token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ orders: lastResults })
+  })
+  .then(async r => {
+    if(!r.ok) throw new Error('Failed to submit');
+    return r.json();
+  })
+  .then(data => {
+    if(data.status === 'success') {
+      let msg = data.message || "Orders successfully created in City-Link Express!";
+      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
+      epResult.innerHTML = `<div class="status ok" style="border-color:#f97316; color:#fdba74; background:rgba(249,115,22,0.1)"><strong>✓</strong> &nbsp; ${msg}</div>`;
+    }
+  })
+  .catch(e => {
+    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
+  });
+}
+
+function submitGDEX() {
+  if (lastResults.length === 0) return;
+  const epResult = document.getElementById('epResult');
+  epResult.classList.remove('hidden');
+  epResult.innerHTML = `<div class="status info">⏳ Submitting to GDEX API...</div>`;
+
+  fetch('/submit-gdex', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${currentSession.access_token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ orders: lastResults })
+  })
+  .then(async r => {
+    if(!r.ok) throw new Error('Failed to submit');
+    return r.json();
+  })
+  .then(data => {
+    if(data.status === 'success') {
+      let msg = data.message || "Orders successfully created in GDEX!";
+      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
+      epResult.innerHTML = `<div class="status ok" style="border-color:#0ea5e9; color:#7dd3fc; background:rgba(14,165,233,0.1)"><strong>✓</strong> &nbsp; ${msg}</div>`;
+    }
+  })
+  .catch(e => {
+    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
+  });
 }
 
 function downloadCSV() {
@@ -666,6 +1071,38 @@ function downloadCSV() {
   a.download = 'heimdall_easyparcel.csv';
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// --- Secret Handshake Protocol ---
+let secretSequence = "";
+const targetSequence = "odin";
+
+document.addEventListener('keydown', (e) => {
+  if (e.key.length === 1 && e.key.match(/[a-zA-Z]/)) {
+    secretSequence += e.key.toLowerCase();
+    if (secretSequence.length > targetSequence.length) {
+      secretSequence = secretSequence.slice(-targetSequence.length);
+    }
+    if (secretSequence === targetSequence) {
+      activateHeimdallSight();
+    }
+  }
+});
+
+function activateHeimdallSight() {
+  document.body.style.transition = "all 2s ease";
+  document.body.style.backgroundImage = "radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.2) 0%, transparent 60%), radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%)";
+  document.documentElement.style.setProperty('--primary', '#fbbf24');
+  document.documentElement.style.setProperty('--primary-hover', '#f59e0b');
+  document.documentElement.style.setProperty('--primary-light', '#fcd34d');
+  
+  const header = document.querySelector('.header h1');
+  header.innerHTML = '<span class="emoji-icon">👁️</span> Heimdall Sight Activated';
+  header.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%)';
+  header.style.webkitBackgroundClip = 'text';
+  header.style.webkitTextFillColor = 'transparent';
+  
+  alert("Secret Handshake Protocol Accepted. You now see all.");
 }
 </script>
 </body>

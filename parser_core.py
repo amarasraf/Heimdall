@@ -86,11 +86,16 @@ def parse_address(text):
         first = parts[0]
         # Heuristic: treat as address-only if first segment starts with common address prefixes
         # (prevents "No 1 Jalan..." being misparsed as recipient_name)
-        address_starters = r'^(No\.?\s*\d|Lot\s*\d|Unit\s*\d|Blok\s*\d|\d+[\s,]*Jalan|\d+[\s,]*Lorong|\d+[\s,]*Taman)'
+        address_starters = r'\b(No\.?\s*\d|Lot\s*\d|Unit\s*\d|Blok\s*\d|\d+[\s,]*Jalan|\d+[\s,]*Lorong|\d+[\s,]*Taman)'
         is_address_number = bool(re.match(r'^([A-Za-z]?[-]?\d+[-/\dA-Za-z]*)$', first.strip()))
         
         street_parts = []
-        if re.match(address_starters, first, re.IGNORECASE) or is_address_number:
+        addr_match = re.search(address_starters, first, re.IGNORECASE)
+        
+        if addr_match and addr_match.start() > 0:
+            name = first[:addr_match.start()].strip()
+            street_parts = [first[addr_match.start():].strip()] + parts[1:]
+        elif addr_match or is_address_number:
             name = ""
             street_parts = parts
         else:
