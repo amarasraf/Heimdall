@@ -157,22 +157,22 @@
     background: linear-gradient(135deg, var(--primary), #e11d48);
     color: white;
     border: none;
-    border-radius: 12px;
-    padding: 16px 28px;
-    font-size: 1.1rem;
+    border-radius: 50px; /* Pill shape is friendlier and easier to tap */
+    padding: 20px 32px; /* Massive touch target for makcik-makcik */
+    font-size: 1.25rem;
     font-family: inherit;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(225, 29, 72, 0.3);
+    box-shadow: 0 8px 20px rgba(225, 29, 72, 0.3);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 12px;
   }
   .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(225, 29, 72, 0.4);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(225, 29, 72, 0.4);
   }
   .btn:active {
     transform: translateY(1px);
@@ -355,6 +355,40 @@
     position: fixed; bottom: 30px; right: 30px; background: #25D366; color: white; width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(37,211,102,0.4); z-index: 1000; cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-decoration: none;
   }
   .floating-wa:hover { transform: scale(1.15) rotate(-5deg); }
+
+  /* Bebbi Mascot UI */
+  .bebbi-bubble {
+    background: white;
+    border: 2px solid var(--primary-light);
+    border-radius: 20px;
+    border-bottom-left-radius: 0;
+    padding: 15px 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 10px 25px rgba(236,72,153,0.15);
+    animation: float 3s ease-in-out infinite;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .bebbi-bubble img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary);
+  }
+  .bebbi-text {
+    text-align: left;
+    color: #1e293b;
+    font-size: 1.1rem;
+    line-height: 1.4;
+  }
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+    100% { transform: translateY(0px); }
+  }
 </style>
 </head>
 <body>
@@ -369,8 +403,9 @@
         <span style="background: white; color: var(--text-muted); padding: 8px 16px; border-radius: 30px; font-weight: 500; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #f1f5f9;">📦 Khas untuk seller Ninja Van & J&T</span>
     </div>
     <div style="position: absolute; top: 0; right: 0; display:flex; gap:10px;">
-      <button id="settingsBtn" class="logout-btn hidden" style="position:relative;" onclick="toggleSettings()">⚙️ Settings</button>
-      <button id="logoutBtn" class="logout-btn hidden" style="position:relative;" onclick="handleSignOut()">Logout</button>
+      <button id="upgradeBtn" class="btn hidden" style="padding: 8px 16px; font-size: 0.9rem; border-radius: 30px;" onclick="document.getElementById('subscription-section').classList.remove('hidden'); document.getElementById('app-section').classList.add('hidden'); document.getElementById('settings-section').classList.add('hidden');">😻 Belanja Wetfood</button>
+      <button id="settingsBtn" class="logout-btn hidden" style="position:relative; background: white; border: 1px solid #e2e8f0; border-radius: 30px; padding: 8px 16px; cursor: pointer; font-weight: 600;" onclick="toggleSettings()">⚙️ Settings</button>
+      <button id="logoutBtn" class="logout-btn hidden" style="position:relative; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 30px; padding: 8px 16px; cursor: pointer; font-weight: 600;" onclick="handleSignOut()">Logout</button>
     </div>
   </div>
 
@@ -381,25 +416,24 @@
       Masukkan API Key EasyParcel anda kat bawah ni.
     </p>
     <div class="auth-form" style="max-width:100%;">
-      <!-- WhatsApp Number -->
-      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 15px;">
-        <label style="font-weight:600;display:block;margin-bottom:8px;">No Telefon WhatsApp (Untuk Bot)</label>
-        <input type="text" id="whatsapp_number" placeholder="Contoh: 60123456789">
-        <p style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
-          Masukkan nombor WhatsApp anda (dengan kod negara, contoh: 6012...). Ini membolehkan Heimdall mengecam anda apabila anda mesej bot kami!
+      <!-- WhatsApp Bot (QR Code Method) -->
+      <div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 15px; position: relative; border-left: 4px solid #25D366;">
+        <span style="position: absolute; top: -12px; right: 20px; background: #f43f5e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 4px 10px rgba(244,63,94,0.3);">👑 Khas Pakej Wetfood</span>
+        <label style="font-weight:700;display:block;margin-bottom:8px; font-size:1.1rem;">Hubungkan WhatsApp (Auto-Reply)</label>
+        <p style="margin-bottom:15px; font-size:0.9rem; color:var(--text-muted);">
+          Tak perlu API leceh. Tekan butang di bawah, buka WhatsApp di phone anda (Linked Devices), dan scan QR code untuk jadikan phone anda sebagai Bot Bebbi!
         </p>
-      </div>
-
-      <!-- Twilio Keys -->
-      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 15px;">
-        <label style="font-weight:600;display:block;margin-bottom:8px;">Twilio Account SID (Khas Untuk Bot)</label>
-        <input type="text" id="twilio_sid" placeholder="Twilio Account SID" style="margin-bottom:10px;">
-        <label style="font-weight:600;display:block;margin-bottom:8px;">Twilio Auth Token</label>
-        <input type="password" id="twilio_token" placeholder="Twilio Auth Token">
+        <div style="text-align: center; margin-top: 20px; margin-bottom: 10px;">
+          <div id="qrPlaceholder" style="width: 200px; height: 200px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 2px dashed #cbd5e1;">
+            <span style="color: #94a3b8; font-weight: 600;">[QR Code Akan Keluar Di Sini]</span>
+          </div>
+          <button class="btn" style="background: #25D366; box-shadow: 0 8px 20px rgba(37,211,102,0.3); font-size: 1rem; padding: 12px 24px;" onclick="alert('Enjin QR sedang dipasang oleh team teknikal! Akan datang tidak lama lagi.')">📱 Jana QR Code</button>
+        </div>
       </div>
 
       <!-- ToyyibPay Keys -->
-      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 15px;">
+      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 15px; position: relative;">
+        <span style="position: absolute; top: -12px; right: 20px; background: #f43f5e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 4px 10px rgba(244,63,94,0.3);">👑 Khas Pakej Wetfood</span>
         <label style="font-weight:600;display:block;margin-bottom:8px;">ToyyibPay Secret Key (Auto-Invoice)</label>
         <input type="password" id="toyyibpay_secret" placeholder="Secret Key" style="margin-bottom:10px;">
         <label style="font-weight:600;display:block;margin-bottom:8px;">ToyyibPay Category Code</label>
@@ -410,15 +444,37 @@
       </div>
 
       <!-- EasyParcel -->
-      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
-        <label style="font-weight:600;display:block;margin-bottom:8px;">EasyParcel API Key</label>
-        <input type="password" id="key_ep" placeholder="Enter EasyParcel API Key">
-        <details style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
-          <summary style="cursor:pointer; color:var(--primary-light);">How to get this?</summary>
-          <div style="padding-top:8px;">1. Log into EasyParcel.<br>2. Go to Integrations > API.<br>3. Generate a new API Key and copy it here.</div>
-        </details>
+      <div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); border-left: 4px solid var(--primary); position: relative;">
+        <span style="position: absolute; top: -12px; right: 20px; background: #f43f5e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 4px 10px rgba(244,63,94,0.3);">👑 Khas Pakej Wetfood</span>
+        <label style="font-weight:700;display:block;margin-bottom:8px; font-size:1.1rem;">Hubungkan Kurier Anda (EasyParcel)</label>
+        <p style="margin-bottom:15px; font-size:0.9rem; color:var(--text-muted);">
+          Masukkan kod rahsia EasyParcel anda di bawah supaya Heimdall boleh tolong tempah rider secara automatik untuk anda.
+        </p>
+        <input type="password" id="key_ep" placeholder="Tampal (Paste) kod EasyParcel anda di sini" style="margin-bottom: 10px;">
+        
+        <div style="background: #fdf2f8; padding: 15px; border-radius: 8px; margin-top: 10px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 200px;">
+            <strong style="color: #be185d; display:block; margin-bottom: 5px;">Langkah-langkah mudah:</strong>
+            <ol style="color: #475569; font-size: 0.9rem; padding-left: 15px; line-height: 1.6;">
+              <li>Log masuk ke akaun EasyParcel anda.</li>
+              <li>Pergi ke menu <strong>Integrations > Add New Store > API Key</strong>.</li>
+              <li>Salin kod yang diberikan dan tampal ke dalam kotak di atas.</li>
+            </ol>
+          </div>
+          <div style="flex: 1; min-width: 250px; text-align: center;">
+            <!-- Maya's GIF Placeholder -->
+            <img src="/static/easyparcel_guide.gif" alt="Tutorial Mudah EasyParcel" style="max-width: 100%; border-radius: 8px; border: 2px solid rgba(236, 72, 153, 0.2); box-shadow: 0 4px 10px rgba(0,0,0,0.05);" onerror="this.src='/static/logo.png'; this.title='Sila letak fail easyparcel_guide.gif dalam folder static!'">
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">*Tonton video di atas untuk rujukan</p>
+          </div>
+        </div>
+        
+        <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+          <a href="https://app.easyparcel.com/my/en/integrations/api" target="_blank" style="color: var(--info); font-size: 0.9rem; text-decoration: none; font-weight: 600;">🔗 Klik sini untuk ambil kod EasyParcel</a>
+          <span style="color: #cbd5e1;">|</span>
+          <a href="https://app.easyparcel.com/my/en/topup" target="_blank" style="color: var(--success); font-size: 0.9rem; text-decoration: none; font-weight: 600;">💳 Klik sini untuk Topup Wallet EasyParcel</a>
+        </div>
       </div>
-      <!-- Sekarang kita guna EasyParcel je supaya senang kerja! -->
+      <!-- End EasyParcel -->
 
       <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
       <div id="settingsResult" class="hidden" style="margin-top:10px;"></div>
@@ -432,19 +488,43 @@
     <!-- 1. The Hero Section (Hook & Urgency) -->
     <div class="glass-card" style="padding: 60px 40px; margin-bottom: 70px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 50px;">
       <div style="flex: 1; min-width: 320px; text-align: left;">
+        
+        <!-- Bebbi Chat Bubble -->
+        <div class="bebbi-bubble">
+          <img src="/static/logo.png" alt="Bebbi" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=Bebbi&backgroundColor=fbcfe8'">
+          <div class="bebbi-text">
+            <strong style="color: var(--primary);">Hai, saya Bebbi! 👋</strong><br>
+            Biar saya tolong susun order makcik hari ni.
+          </div>
+        </div>
+
         <h2 style="font-size: 3.2rem; margin-bottom: 25px; font-weight: 800; line-height: 1.15; letter-spacing: -1px; color: #1e293b;">
-          Siapkan 100 Order Dalam 5 Minit. <br><span class="gradient-text">Tak Payah Pening Salin Alamat Lagi.</span>
+          Siapkan 100 Order Dalam 5 Minit. <br><span class="gradient-text">Tak Payah Pening Salin Alamat.</span>
         </h2>
-        <div style="background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 12px 20px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 35px; box-shadow: 0 4px 10px rgba(239,68,68,0.1);">
-          <span style="font-size: 1.2rem;">🔥</span> Tawaran Terhad: Daftar hari ini & susun order PERCUMA!
+        <div style="background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 12px 20px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 35px; box-shadow: 0 4px 10px rgba(239,68,68,0.1); font-size: 1.1rem;">
+          <span style="font-size: 1.4rem;">🔥</span> Promo Terhad: Daftar percuma sekarang!
         </div>
         <br>
-        <button class="btn pulsing-btn" style="font-size: 1.4rem; padding: 20px 45px; border-radius: 50px;" onclick="document.getElementById('auth-section').classList.remove('hidden'); document.getElementById('landing-section').classList.add('hidden'); window.scrollTo(0,0);">🚀 Cuba Percuma Sekarang</button>
+        <button class="btn pulsing-btn" onclick="document.getElementById('auth-section').classList.remove('hidden'); document.getElementById('landing-section').classList.add('hidden'); window.scrollTo(0,0);">
+          🚀 Klik Sini Untuk Mula (Percuma)
+        </button>
       </div>
       <div style="flex: 1; min-width: 300px; display: flex; justify-content: center; position: relative;">
         <!-- Glowing background behind image -->
-        <div style="position: absolute; inset: -20px; background: radial-gradient(circle, rgba(236,72,153,0.3) 0%, transparent 70%); z-index: 0;"></div>
-        <img src="/static/hero.png" alt="Makcik using Heimdall to blast orders" style="max-width: 100%; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(236,72,153,0.3); z-index: 1; transform: rotate(1deg); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);" onmouseover="this.style.transform='scale(1.03) rotate(-1deg)'" onmouseout="this.style.transform='scale(1) rotate(1deg)'" onerror="this.src='/static/logo.png'">
+        <div style="position: absolute; inset: -20px; background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%); z-index: 0;"></div>
+        <img src="/static/heimdall_demo.gif" alt="Demo Heimdall menyusun alamat" style="max-width: 100%; border-radius: 16px; border: 4px solid white; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1); z-index: 1;" onerror="this.src='https://images.unsplash.com/photo-1556740738-b6a63e27c4df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'; this.title='Sila letak fail heimdall_demo.gif!';">
+      </div>
+    </div>
+
+    <!-- Trust Ribbon (SaaS Best Practice) -->
+    <div style="text-align: center; margin-bottom: 90px; opacity: 0.8;">
+      <p style="font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 25px;">Sistem Berintegrasi Penuh Dengan</p>
+      <div style="display: flex; justify-content: center; gap: 50px; flex-wrap: wrap; align-items: center; filter: grayscale(100%);">
+        <!-- Using text as placeholders for logos so it looks clean and not spammy -->
+        <span style="font-size: 1.4rem; font-weight: 800; color: #475569; letter-spacing: -0.5px;">EasyParcel</span>
+        <span style="font-size: 1.4rem; font-weight: 800; color: #475569; letter-spacing: -0.5px;">Lalamove</span>
+        <span style="font-size: 1.4rem; font-weight: 800; color: #475569; letter-spacing: -0.5px;">ToyyibPay</span>
+        <span style="font-size: 1.4rem; font-weight: 800; color: #475569; letter-spacing: -0.5px;">DuitNow</span>
       </div>
     </div>
 
@@ -486,7 +566,7 @@
         <div style="flex: 1; min-width: 250px;">
           <div style="width: 90px; height: 90px; background: #fdf2f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; margin: 0 auto 25px; color: var(--primary); box-shadow: 0 10px 20px rgba(236,72,153,0.15);">🖨️</div>
           <h4 style="font-size: 1.4rem; margin-bottom: 12px; color: #1e293b; font-weight: 700;">3. Print</h4>
-          <p style="color: var(--text-muted); line-height: 1.6; font-size: 1.05rem;">Sistem terus book kurier pilihan anda. Tinggal print waybill & tampal.</p>
+          <p style="color: var(--text-muted); line-height: 1.6; font-size: 1.05rem;">Download fail Excel kurier, ATAU biar Bebbi tolong book runner automatik! Tinggal print & tampal.</p>
         </div>
       </div>
       <div style="margin-top: 60px;">
@@ -551,27 +631,65 @@
 
     <!-- 5. Pricing & FAQ -->
     <div class="glass-card" style="padding: 70px 40px; margin-bottom: 40px; text-align: center;">
-      <h3 style="font-size: 2.6rem; font-weight: 800; margin-bottom: 25px; color: #1e293b;">Sistem Canggih, <span class="gradient-text">Harga Mampu Milik</span></h3>
-      <p style="color: #334155; font-size: 1.3rem; margin-bottom: 50px; line-height: 1.6;">Upah pekerja RM1,500 sebulan.<br>Langgan Heimdall hanya <strong style="font-size:1.8rem; color:var(--primary); font-weight: 800;">RM30</strong> sebulan (RM1 sehari!).</p>
+      <h3 style="font-size: 2.8rem; font-weight: 800; margin-bottom: 15px; color: #1e293b;">Berapa Upah <span class="gradient-text">Bebbi?</span></h3>
+      <p style="color: var(--text-muted); font-size: 1.2rem; margin-bottom: 50px; font-weight: 500;">Upah staf RM1,500 sebulan. Upah Bebbi murah je, cuma perlukan makanan! 🐾</p>
       
+      <div style="display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; max-width: 950px; margin: 0 auto 60px;">
+        
+        <!-- Tier 1: Kibbles -->
+        <div style="flex: 1; min-width: 300px; background: white; border-radius: 24px; padding: 40px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 2px solid #f1f5f9; position: relative;">
+          <div style="font-size: 3rem; margin-bottom: 15px;">🥣</div>
+          <h4 style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 10px;">Belanja Bebbi Kibbles</h4>
+          <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary); margin-bottom: 20px;">RM 5 <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">/ bulan</span></div>
+          <p style="color: #475569; font-size: 1.05rem; line-height: 1.6; margin-bottom: 30px; min-height: 80px;">
+            "Bebbi boleh tolong susunkan alamat customer yang berterabur. Makcik atau abang tinggal copy-paste je, lepas tu download fail Excel!"
+          </p>
+          <ul style="text-align: left; margin-bottom: 30px; color: #334155; font-size: 1rem; line-height: 2; list-style: none; padding: 0;">
+            <li>✅ Unlimited susun alamat</li>
+            <li>✅ Format kemas automatik</li>
+            <li>✅ Download CSV kurier</li>
+            <li style="color: #94a3b8;">❌ Tiada Bot WhatsApp</li>
+            <li style="color: #94a3b8;">❌ Tiada Auto-Runner</li>
+          </ul>
+          <button class="btn secondary" style="width: 100%; font-size: 1.1rem; padding: 15px;" onclick="document.getElementById('auth-section').classList.remove('hidden'); document.getElementById('landing-section').classList.add('hidden'); window.scrollTo(0,0);">Mula Upah Bebbi</button>
+        </div>
+
+        <!-- Tier 2: Wetfood -->
+        <div style="flex: 1; min-width: 300px; background: white; border-radius: 24px; padding: 40px 30px; box-shadow: 0 20px 40px rgba(236,72,153,0.15); border: 3px solid var(--primary); position: relative; transform: scale(1.05);">
+          <div style="position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, var(--primary), #e11d48); color: white; padding: 6px 20px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(225,29,72,0.3);">PALING BERBALOI 😻</div>
+          <div style="font-size: 3rem; margin-bottom: 15px;">🥫</div>
+          <h4 style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 10px;">Belanja Bebbi Wetfood</h4>
+          <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary); margin-bottom: 20px;">RM 30 <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">/ bulan</span></div>
+          <p style="color: #475569; font-size: 1.05rem; line-height: 1.6; margin-bottom: 30px; min-height: 80px;">
+            "Yay! Bila dapat wetfood, Bebbi lagi semangat! Bebbi boleh buat semua... dari reply WhatsApp sampai panggil runner. Makcik atau abang boleh rilek je!"
+          </p>
+          <ul style="text-align: left; margin-bottom: 30px; color: #334155; font-size: 1rem; line-height: 2; list-style: none; padding: 0;">
+            <li>✅ <strong>Bebbi Buat Semua</strong></li>
+            <li>✅ Bot Auto-Reply WhatsApp</li>
+            <li>✅ Sistem Bayaran Automatik</li>
+            <li>✅ Auto-book runner EasyParcel</li>
+            <li>✅ Follow-up customer senyap</li>
+          </ul>
+          <button class="btn pulsing-btn" style="width: 100%; font-size: 1.1rem; padding: 15px;" onclick="document.getElementById('auth-section').classList.remove('hidden'); document.getElementById('landing-section').classList.add('hidden'); window.scrollTo(0,0);">Bagi Bebbi Wetfood</button>
+        </div>
+
+      </div>
+      
+      <!-- FAQ Section -->
       <div style="max-width: 650px; margin: 0 auto; text-align: left; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
         <h4 style="font-size: 1.6rem; margin-bottom: 25px; color: #1e293b; font-weight: 800; text-align: center;">Soalan Lazim (FAQ)</h4>
         <div style="margin-bottom: 25px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px;">
           <strong style="color: #be185d; font-size: 1.15rem; display: block; margin-bottom: 8px;">Q: Kena pandai IT ke nak guna?</strong>
-          <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.5;">A: Langsung tak! Kalau pandai main WhatsApp, pandailah guna Heimdall. Senang sangat.</p>
+          <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.5;">A: Langsung tak! Kalau pandai main WhatsApp, pandailah upah Bebbi. Senang sangat.</p>
         </div>
         <div style="margin-bottom: 25px; border-bottom: 1px solid #f1f5f9; padding-bottom: 15px;">
           <strong style="color: #be185d; font-size: 1.15rem; display: block; margin-bottom: 8px;">Q: Ada caj tersembunyi?</strong>
-          <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.5;">A: Tiada! Hanya RM30 flat rate sebulan. Anda jimat masa dan tenaga beribu ringgit.</p>
+          <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.5;">A: Tiada! Hanya belanja Bebbi RM5 atau RM30 sebulan flat rate. Anda jimat tenaga beribu ringgit.</p>
         </div>
         <div style="margin-bottom: 15px;">
           <strong style="color: #be185d; font-size: 1.15rem; display: block; margin-bottom: 8px;">Q: Boleh guna kurier apa?</strong>
-          <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.5;">A: Boleh guna EasyParcel, Ninja Van, J&T, DHL, PosLaju, dan banyak lagi!</p>
+          <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.5;">A: Boleh guna EasyParcel, Ninja Van, J&T, Lalamove, dan banyak lagi!</p>
         </div>
-      </div>
-      
-      <div style="margin-top: 60px;">
-        <button class="btn pulsing-btn" style="font-size: 1.4rem; padding: 22px 50px; border-radius: 50px;" onclick="document.getElementById('auth-section').classList.remove('hidden'); document.getElementById('landing-section').classList.add('hidden'); window.scrollTo(0,0);">Mula Jimat Masa Sekarang</button>
       </div>
     </div>
     
@@ -598,13 +716,18 @@
 
   <!-- Subscription Pricing Section -->
   <div id="subscription-section" class="card hidden" style="text-align: center; padding: 50px 30px;">
-    <h2 style="justify-content:center; font-size: 2rem;"><span class="emoji-icon">🔒</span> Alamak, Pas Heimdall Dah Tamat Tempoh! 🔒</h2>
+    <h2 style="justify-content:center; font-size: 2rem;"><span class="emoji-icon">🐾</span> Pilih Pakej Bebbi Anda</h2>
     <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 1.1rem; max-width: 500px; margin-left: auto; margin-right: auto;">
-      Pas anda dah expired. Langgan Pas 30-Hari via DuitNow QR/FPX untuk terus guna Heimdall tanpa had.
+      Langganan Heimdall diperlukan. Sila pilih upah Bebbi untuk teruskan.
     </p>
-    <button class="btn" style="font-size: 1.2rem; padding: 16px 32px; max-width: 350px; margin: 0 auto; display: block;" onclick="purchaseSubscription()">
-      Beli Pas 30 Hari (RM 30 je) <span class="emoji-icon">💳</span>
-    </button>
+    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+      <button id="btnBasic" class="btn secondary" style="font-size: 1.1rem; padding: 16px 24px;" onclick="purchaseSubscription('basic')">
+        🥣 Beli Kibbles (RM 5)
+      </button>
+      <button id="btnPro" class="btn pulsing-btn" style="font-size: 1.1rem; padding: 16px 24px;" onclick="purchaseSubscription('pro')">
+        🥫 Belanja Wetfood (RM 30)
+      </button>
+    </div>
   </div>
 
   <!-- App Section (Hidden by default) -->
@@ -710,15 +833,15 @@ async function checkSubscription() {
   }
 }
 
-async function purchaseSubscription() {
+async function purchaseSubscription(tier) {
   if (!currentSession) return;
   try {
-    const btn = document.querySelector('#subscription-section .btn');
+    const btn = tier === 'basic' ? document.getElementById('btnBasic') : document.getElementById('btnPro');
     const originalText = btn.innerHTML;
     btn.innerHTML = '⏳ Connecting to Bank...';
     btn.disabled = true;
 
-    const r = await fetch('/create-bill', {
+    const r = await fetch(`/create-bill?tier=${tier}`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
     });
@@ -748,6 +871,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     document.getElementById('auth-section').classList.add('hidden');
     document.getElementById('landing-section').classList.add('hidden');
     document.getElementById('logoutBtn').classList.remove('hidden');
+    document.getElementById('upgradeBtn').classList.remove('hidden');
     document.getElementById('settingsBtn').classList.remove('hidden');
     checkSubscription();
   } else {
@@ -757,6 +881,7 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
     document.getElementById('settings-section').classList.add('hidden');
     document.getElementById('subscription-section').classList.add('hidden');
     document.getElementById('logoutBtn').classList.add('hidden');
+    document.getElementById('upgradeBtn').classList.add('hidden');
     document.getElementById('settingsBtn').classList.add('hidden');
     document.getElementById('subBadge').classList.add('hidden');
   }
@@ -827,8 +952,6 @@ async function loadSettings() {
     });
     const keys = await r.json();
     document.getElementById('key_ep').value = keys.easyparcel || '';
-    document.getElementById('twilio_sid').value = keys.twilio_sid || '';
-    document.getElementById('twilio_token').value = keys.twilio_token || '';
     document.getElementById('toyyibpay_secret').value = keys.toyyibpay_secret || '';
     document.getElementById('toyyibpay_category').value = keys.toyyibpay_category || '';
 
@@ -836,9 +959,6 @@ async function loadSettings() {
       headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
     });
     const meData = await meR.json();
-    if(meData.whatsapp_number) {
-        document.getElementById('whatsapp_number').value = meData.whatsapp_number;
-    }
   } catch(e) {
     console.error("Error loading settings", e);
   }
@@ -852,12 +972,9 @@ async function saveSettings() {
   
   const keys = {
     easyparcel: document.getElementById('key_ep').value,
-    twilio_sid: document.getElementById('twilio_sid').value,
-    twilio_token: document.getElementById('twilio_token').value,
     toyyibpay_secret: document.getElementById('toyyibpay_secret').value,
     toyyibpay_category: document.getElementById('toyyibpay_category').value
   };
-  const whatsappNum = document.getElementById('whatsapp_number').value;
 
   try {
     const r = await fetch('/api-keys', {
@@ -868,17 +985,6 @@ async function saveSettings() {
       },
       body: JSON.stringify({ keys })
     });
-
-    if (whatsappNum) {
-      await fetch('/whatsapp-number', {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${currentSession.access_token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ whatsapp_number: whatsappNum })
-      });
-    }
 
     if (r.ok) {
       res.innerHTML = `<div class="status ok"><strong>✓</strong> Settings saved successfully!</div>`;

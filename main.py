@@ -17,10 +17,57 @@ from parser_core import parse_address, parse_easyparcel_row, to_easyparcel
 from database import save_parse_result, supabase, get_user_profile, extend_subscription, get_user_keys, save_user_keys
 
 app = FastAPI(title="Heimdall", description="Malaysian Address Parser for EasyParcel")
+import asyncio
+from datetime import datetime, timezone, timedelta
+
 import os
 if not os.path.exists('static'):
     os.makedirs('static')
 app.mount('/static', StaticFiles(directory='static'), name='static')
+
+# Background Task: Abandoned Cart Follow-Up
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(abandoned_cart_worker())
+
+async def abandoned_cart_worker():
+    """
+    Scans the database every hour for users stuck in AWAITING_RECEIPT
+    and sends a follow-up WhatsApp message.
+    """
+    from database import supabase, get_user_keys
+    from whatsapp_service import send_whatsapp_message
+    
+    while True:
+        try:
+            if supabase:
+                # Find sessions created more than 1 hour ago still in AWAITING_RECEIPT
+                one_hour_ago = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+                
+                res = supabase.table('whatsapp_sessions').select('*').eq('state', 'AWAITING_RECEIPT').lt('created_at', one_hour_ago).execute()
+                
+                for session in res.data:
+                    # To prevent spamming, we should mark it as FOLLOWED_UP or delete it
+                    # For this MVP, we will change state to AWAITING_RECEIPT_FOLLOWED_UP
+                    user_id = session.get('user_id')
+                    sender = session.get('phone_number')
+                    
+                    keys = get_user_keys(user_id)
+                    tw_sid = keys.get("twilio_sid", "")
+                    tw_token = keys.get("twilio_token", "")
+                    
+                    if tw_sid and tw_token:
+                        send_whatsapp_message(
+                            sender, 
+                            "Hi! Nak confirm jadi ke order tadi? Kalau ada masalah payment, boleh rogol saya ya. Terima kasih! 🙏", 
+                            tw_sid, tw_token
+                        )
+                    # Update state so we don't message again
+                    supabase.table('whatsapp_sessions').update({'state': 'AWAITING_RECEIPT_FOLLOWED_UP'}).eq('id', session['id']).execute()
+        except Exception as e:
+            print(f"[ERROR] Abandoned Cart Worker failed: {e}")
+            
+        await asyncio.sleep(3600) # Wait 1 hour before checking again
 
 
 security = HTTPBearer()
@@ -38,15 +85,19 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except Exception as e:
         raise HTTPException(status_code=401, detail="Authentication failed or token expired")
 
-def check_subscription(user_id: str):
+def check_subscription(user_id: str, required_tier: str = "basic"):
     profile = get_user_profile(user_id)
     if not profile or not profile.get('subscription_end_date'):
-        raise HTTPException(status_code=402, detail="Subscription expired. Please purchase a 30-day pass.")
+        raise HTTPException(status_code=402, detail="Langganan tamat tempoh. Sila upah Bebbi dahulu.")
     
     end_date = datetime.datetime.fromisoformat(profile['subscription_end_date'].replace('Z', '+00:00'))
     now = datetime.datetime.now(datetime.timezone.utc)
     if now > end_date:
-        raise HTTPException(status_code=402, detail="Subscription expired. Please purchase a 30-day pass.")
+        raise HTTPException(status_code=402, detail="Langganan tamat tempoh. Sila upah Bebbi dahulu.")
+        
+    user_tier = profile.get('subscription_tier', 'basic')
+    if required_tier == "pro" and user_tier != "pro":
+         raise HTTPException(status_code=403, detail="Fungsi ini perlukan Pakej Bebbi Buat Semua (RM30/sebulan).")
 
 TOYYIBPAY_SECRET_KEY = os.getenv("TOYYIBPAY_SECRET_KEY", "your-sandbox-secret-key")
 TOYYIBPAY_CATEGORY = os.getenv("TOYYIBPAY_CATEGORY", "your-sandbox-category-code")
@@ -56,8 +107,8 @@ TOYYIBPAY_URL = "https://dev.toyyibpay.com"
 async def get_me(user=Depends(get_current_user)):
     profile = get_user_profile(user.id)
     if profile:
-        return {"user_id": user.id, "email": user.email, "subscription_end_date": profile.get("subscription_end_date"), "whatsapp_number": profile.get("whatsapp_number")}
-    return {"user_id": user.id, "email": user.email, "subscription_end_date": None, "whatsapp_number": None}
+        return {"user_id": user.id, "email": user.email, "subscription_end_date": profile.get("subscription_end_date"), "whatsapp_number": profile.get("whatsapp_number"), "subscription_tier": profile.get("subscription_tier", "basic")}
+    return {"user_id": user.id, "email": user.email, "subscription_end_date": None, "whatsapp_number": None, "subscription_tier": "none"}
 
 class PhoneRequest(BaseModel):
     whatsapp_number: str
@@ -87,18 +138,21 @@ async def update_api_keys(req: ApiKeysRequest, user=Depends(get_current_user)):
 from fastapi import Request
 
 @app.post("/create-bill")
-async def create_bill(user=Depends(get_current_user)):
+async def create_bill(tier: str = "basic", user=Depends(get_current_user)):
+    amount = 500 if tier == "basic" else 3000
+    bill_name = 'Pakej Bebbi Tolong Susun' if tier == "basic" else 'Pakej Bebbi Buat Semua'
+    
     payload = {
         'userSecretKey': TOYYIBPAY_SECRET_KEY,
         'categoryCode': TOYYIBPAY_CATEGORY,
-        'billName': 'Heimdall 30-Day Unlimited Pass',
-        'billDescription': '30 days of unlimited address parsing',
+        'billName': bill_name,
+        'billDescription': '30 days subscription',
         'billPriceSetting': 1,
         'billPayorInfo': 1,
-        'billAmount': 3000,
+        'billAmount': amount,
         'billReturnUrl': 'https://heimdall-517339133458.asia-southeast1.run.app/',
         'billCallbackUrl': 'https://heimdall-517339133458.asia-southeast1.run.app/webhook/toyyibpay',
-        'billExternalReferenceNo': user.id,
+        'billExternalReferenceNo': f"{user.id}|{tier}",
         'billTo': user.email,
         'billEmail': user.email,
         'billPhone': '0123456789'
@@ -122,7 +176,10 @@ async def toyyibpay_webhook(request: Request):
     bill_external_ref = form_data.get('refno')
     
     if status_id == '1' and bill_external_ref:
-        extend_subscription(bill_external_ref, 30)
+        parts = str(bill_external_ref).split('|')
+        user_id = parts[0]
+        tier = parts[1] if len(parts) > 1 else 'basic'
+        extend_subscription(user_id, 30, tier)
         return {"status": "success"}
     return {"status": "ignored"}
 
@@ -215,7 +272,7 @@ class SubmitOrderRequest(BaseModel):
 
 @app.post("/submit-easyparcel")
 async def submit_easyparcel(req: SubmitOrderRequest, user=Depends(get_current_user)):
-    check_subscription(user.id)
+    check_subscription(user.id, "pro")
     keys = get_user_keys(user.id)
     ep_key = keys.get("easyparcel", EASYPARCEL_API_KEY)
     
@@ -263,147 +320,26 @@ async def submit_easyparcel(req: SubmitOrderRequest, user=Depends(get_current_us
         if data.get("api_status") == "Success":
             return JSONResponse({"status": "success", "data": data})
         else:
+            error_msg = str(data)
+            if "credit" in error_msg.lower() or "fund" in error_msg.lower() or "balance" in error_msg.lower() or "topup" in error_msg.lower():
+                raise HTTPException(400, "Alamak! Kredit EasyParcel anda tak cukup. Sila topup serendah RM20 di pautan Topup EasyParcel untuk teruskan penghantaran.")
             raise HTTPException(400, f"EasyParcel API Error: {data}")
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(500, str(e))
 
-from whatsapp_service import send_whatsapp_message
-from database import get_user_by_whatsapp, get_whatsapp_session, create_whatsapp_session, update_whatsapp_session, delete_whatsapp_session
-
-@app.post("/webhook/whatsapp")
-async def whatsapp_webhook(request: Request):
-    import re
-    import requests
-    form_data = await request.form()
+# Evolution API Webhook Placeholder
+# This endpoint will receive messages from our Node.js QR Engine
+@app.post("/webhook/evolution")
+async def evolution_webhook(request: Request):
+    payload = await request.json()
     
-    sender = form_data.get("From", "")
-    clean_sender = sender.replace("whatsapp:", "").replace("+", "").replace("-", "").replace(" ", "")
-    body = form_data.get("Body", "").strip()
+    # Expected payload from EvolutionAPI:
+    # {"data": {"message": {"conversation": "The actual message text", "key": {"remoteJid": "60123456789@s.whatsapp.net"}}}}
     
-    # 1. Check if user exists
-    profile = get_user_by_whatsapp(clean_sender)
-    if not profile:
-        return {"status": "unauthorized"}
-        
-    user_id = profile.get("user_id")
-    keys = get_user_keys(user_id)
-    tw_sid = keys.get("twilio_sid", "")
-    tw_token = keys.get("twilio_token", "")
+    # Check subscription status and handle parser/auto-reply logic here later
+    # This keeps Twilio out of our system!
     
-    # 2. Check subscription
-    try:
-        check_subscription(user_id)
-    except HTTPException:
-        send_whatsapp_message(sender, "Alamak bos, langganan Heimdall dah tamat tempoh! 😭\n\nSila renew di website.", tw_sid, tw_token)
-        return {"status": "expired"}
-
-    # 3. Handle State Machine
-    session = get_whatsapp_session(user_id, sender)
-    
-    # helper for sending to easyparcel (simulated)
-    def push_to_easyparcel(parsed, tp_sid, tp_token):
-        send_whatsapp_message(
-            sender, 
-            f"Settle bos! 🎉 (Simulasi)\n\nOrder untuk *{parsed.get('recipient_name')}* dah direkod.\n\n*(Nota: Server EasyParcel rasmi sedang offline/down sekarang, jadi order ni disimpan sebagai draf dalam Heimdall!)*", 
-            tp_sid, tp_token
-        )
-
-    if session and session.get("state") == "AWAITING_PRICE":
-        # The user replied with a price
-        import re
-        price_match = re.search(r'\d+(\.\d{1,2})?', body)
-        if not price_match:
-            send_whatsapp_message(sender, "Maaf bos, tak nampak nombor harga. Cuba taip harga je (contoh: 50 atau 12.50).", tw_sid, tw_token)
-            return {"status": "awaiting_price_retry"}
-            
-        amount = float(price_match.group(0))
-        parsed = session.get("parsed_address", {})
-        
-        # Check payment gateway preference
-        toyyib_secret = keys.get("toyyibpay_secret")
-        toyyib_category = keys.get("toyyibpay_category")
-        
-        update_whatsapp_session(session["id"], {"state": "AWAITING_RECEIPT", "amount": amount})
-        
-        if toyyib_secret and toyyib_category:
-            # Generate ToyyibPay link
-            tp_payload = {
-                'userSecretKey': toyyib_secret,
-                'categoryCode': toyyib_category,
-                'billName': f"Order {parsed.get('recipient_name', 'Customer')}",
-                'billDescription': 'Pembelian dari WhatsApp',
-                'billPriceSetting': 1,
-                'billPayorInfo': 1,
-                'billAmount': int(amount * 100),
-                'billReturnUrl': '',
-                'billCallbackUrl': 'https://heimdall-517339133458.asia-southeast1.run.app/webhook/toyyibpay',
-                'billExternalReferenceNo': str(session["id"]),
-                'billTo': parsed.get('recipient_name', 'Customer'),
-                'billEmail': 'customer@example.com',
-                'billPhone': parsed.get('phone', '0123456789'),
-            }
-            try:
-                tp_res = requests.post(f"{TOYYIBPAY_URL}/index.php/api/createBill", data=tp_payload).json()
-                bill_code = tp_res[0]['BillCode']
-                payment_link = f"{TOYYIBPAY_URL}/{bill_code}"
-                update_whatsapp_session(session["id"], {"payment_link": payment_link})
-                
-                send_whatsapp_message(
-                    sender, 
-                    f"Settle bos! Forward mesej ni kat customer:\n\n*Terima kasih, order anda RM{amount:.2f}.*\n*Sila buat pembayaran di link ini: {payment_link}*\n\nBila customer bayar, Heimdall akan auto-hantar ke EasyParcel!", 
-                    tw_sid, tw_token
-                )
-            except Exception as e:
-                send_whatsapp_message(sender, f"Gagal generate link ToyyibPay. Cek API Key bos. Error: {e}", tw_sid, tw_token)
-        else:
-            # Static DuitNow QR flow
-            send_whatsapp_message(
-                sender,
-                f"Settle bos! Forward QR DuitNow bos kat customer dan minta RM{amount:.2f}.\n\n*(Nanti saya akan bagi fungsi upload QR)*\n\n*Lepas customer bayar, bos forward resit/taip 'Dah bayar' untuk auto-generate tracking number!*",
-                tw_sid, tw_token
-            )
-        return {"status": "price_received"}
-        
-    elif session and session.get("state") == "AWAITING_RECEIPT":
-        # Usually they forward a receipt. For now, accept "paid"
-        if "bayar" in body.lower() or "paid" in body.lower():
-            send_whatsapp_message(sender, "Resit disahkan! 🚀 Tengah hantar ke EasyParcel...", tw_sid, tw_token)
-            parsed = session.get("parsed_address", {})
-            push_to_easyparcel(parsed, tw_sid, tw_token)
-            delete_whatsapp_session(session["id"])
-        else:
-            send_whatsapp_message(sender, "Sila upload gambar resit dari customer, atau taip 'Dah bayar' untuk teruskan.", tw_sid, tw_token)
-        return {"status": "awaiting_receipt"}
-        
-    else:
-        # New order! Parse Address.
-        if re.search(r'(Nama penerima\s*:|Alamat penerima\s*:)', body, re.IGNORECASE):
-            parsed_list = parse_easyparcel_row({"recipient_name": body})
-        else:
-            parsed_list = [parse_address(body)]
-            
-        parsed = parsed_list[0]
-        
-        # Check for price in the new message
-        price_match = re.search(r'RM\s*(\d+(\.\d{1,2})?)', body, re.IGNORECASE)
-        if price_match:
-            amount = float(price_match.group(1))
-            session_rec = create_whatsapp_session(user_id, sender, "AWAITING_RECEIPT", parsed, body)
-            
-            # Has price, ask for receipt directly
-            send_whatsapp_message(
-                sender,
-                f"Alamat cun, RM{amount:.2f} dikesan!\n\nSila minta customer bayar, kemudian forward resit ke sini (atau taip 'Dah bayar') untuk hantar ke EasyParcel.",
-                tw_sid, tw_token
-            )
-        else:
-            # No price found, ask for price
-            create_whatsapp_session(user_id, sender, "AWAITING_PRICE", parsed, body)
-            send_whatsapp_message(
-                sender, 
-                f"Alamat cun! Berapa ringgit nak charge *{parsed.get('recipient_name', 'customer')}* ni bos? (Taip nombor je, contoh: 50)", 
-                tw_sid, tw_token
-            )
-        
-        return {"status": "parsed"}
+    return {"status": "success", "message": "Evolution API webhook received"}
 

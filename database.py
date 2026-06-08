@@ -46,7 +46,7 @@ def get_user_profile(user_id: str):
         print(f"[ERROR] get_user_profile: {e}")
         return None
 
-def extend_subscription(user_id: str, days: int = 30):
+def extend_subscription(user_id: str, days: int = 30, tier: str = 'basic'):
     if not supabase:
         return False
     try:
@@ -64,7 +64,8 @@ def extend_subscription(user_id: str, days: int = 30):
         
         supabase.table("user_profiles").upsert({
             "user_id": user_id,
-            "subscription_end_date": new_end.isoformat()
+            "subscription_end_date": new_end.isoformat(),
+            "subscription_tier": tier
         }).execute()
         return True
     except Exception as e:

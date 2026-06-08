@@ -15,3 +15,6 @@ ALTER TABLE public.parse_history ENABLE ROW LEVEL SECURITY;
 -- Allow anon inserts for now (since we don't have Auth setup yet)
 CREATE POLICY "Allow anon insert" ON public.parse_history FOR INSERT WITH CHECK (true);
 CREATE POLICY "Allow anon select" ON public.parse_history FOR SELECT USING (true);
+
+-- Adding Subscription Tier for Basic/Pro Packages
+ALTER TABLE public.user_profiles ADD COLUMN IF NOT EXISTS subscription_tier text default 'basic';
