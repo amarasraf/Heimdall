@@ -56,8 +56,18 @@ TOYYIBPAY_URL = "https://dev.toyyibpay.com"
 async def get_me(user=Depends(get_current_user)):
     profile = get_user_profile(user.id)
     if profile:
-        return {"user_id": user.id, "email": user.email, "subscription_end_date": profile.get("subscription_end_date")}
-    return {"user_id": user.id, "email": user.email, "subscription_end_date": None}
+        return {"user_id": user.id, "email": user.email, "subscription_end_date": profile.get("subscription_end_date"), "whatsapp_number": profile.get("whatsapp_number")}
+    return {"user_id": user.id, "email": user.email, "subscription_end_date": None, "whatsapp_number": None}
+
+class PhoneRequest(BaseModel):
+    whatsapp_number: str
+
+@app.post("/whatsapp-number")
+async def update_phone(req: PhoneRequest, user=Depends(get_current_user)):
+    from database import save_whatsapp_number
+    if save_whatsapp_number(user.id, req.whatsapp_number):
+        return {"status": "success"}
+    raise HTTPException(500, "Failed to save phone number")
 
 @app.get("/api-keys")
 async def fetch_api_keys(user=Depends(get_current_user)):
@@ -255,4 +265,105 @@ async def submit_easyparcel(req: SubmitOrderRequest, user=Depends(get_current_us
             raise HTTPException(400, f"EasyParcel API Error: {data}")
     except Exception as e:
         raise HTTPException(500, str(e))
+
+from whatsapp_service import send_whatsapp_message
+from database import get_user_by_whatsapp
+
+@app.post("/webhook/whatsapp")
+async def whatsapp_webhook(request: Request):
+    form_data = await request.form()
+    
+    sender = form_data.get("From", "")
+    body = form_data.get("Body", "").strip()
+    
+    # 1. Check if user exists
+    profile = get_user_by_whatsapp(sender)
+    
+    if not profile:
+        send_whatsapp_message(
+            sender, 
+            "Maaf bos, nombor ni tak wujud dalam sistem Heimdall. 🛑\n\nSila masukkan nombor telefon WhatsApp bos (bersama kod negara spt 6012...) di ruangan *Settings* dalam website Heimdall dulu ya!"
+        )
+        return {"status": "unauthorized"}
+        
+    user_id = profile.get("user_id")
+    
+    # 2. Check subscription
+    try:
+        check_subscription(user_id)
+    except HTTPException:
+        send_whatsapp_message(
+            sender, 
+            "Alamak bos, langganan Heimdall dah tamat tempoh! 😭\n\nSila renew di website untuk terus guna bot ni."
+        )
+        return {"status": "expired"}
+        
+    # 3. Send processing message
+    send_whatsapp_message(
+        sender, 
+        "Mesej diterima bos! 🚀\nTengah susun alamat dan hantar ke EasyParcel..."
+    )
+    
+    # 4. Parse address
+    if re.search(r'(Nama penerima\s*:|Alamat penerima\s*:)', body, re.IGNORECASE):
+        parsed_list = parse_easyparcel_row({"recipient_name": body})
+    else:
+        parsed_list = [parse_address(body)]
+        
+    parsed = parsed_list[0]
+    save_parse_result("whatsapp", body, parsed_list, user_id)
+    
+    # 5. Send to EasyParcel
+    keys = get_user_keys(user_id)
+    ep_key = keys.get("easyparcel", EASYPARCEL_API_KEY)
+    
+    if not ep_key:
+        send_whatsapp_message(
+            sender,
+            f"Alamat berjaya dikesan!\n\n*Nama:* {parsed.get('recipient_name')}\n*Phone:* {parsed.get('phone')}\n\nTAPI bos belum letak API Key EasyParcel dalam Settings. Sila letak dulu ya! 🔧"
+        )
+        return {"status": "no_api_key"}
+        
+    url = "https://api.easyparcel.my/ep-api/v1.2/"
+    payload = {
+        "api": ep_key,
+        "bulk": [{
+            "weight": "0.5",
+            "content": "General merchandise",
+            "value": "100",
+            "pick_point": "P1", 
+            "pick_name": "Heimdall Sender",
+            "pick_company": "Heimdall Co",
+            "pick_contact": "0123456789",
+            "pick_mobile": "0123456789",
+            "pick_addr1": "HQ",
+            "pick_city": "Kuala Lumpur",
+            "pick_state": "kuala lumpur",
+            "pick_code": "50000",
+            "send_name": parsed.get("recipient_name", "Recipient") or "Recipient",
+            "send_contact": parsed.get("phone", "0123456789") or "0123456789",
+            "send_mobile": parsed.get("phone", "0123456789") or "0123456789",
+            "send_addr1": parsed.get("street", "Address") or "Address",
+            "send_city": parsed.get("city", "City") or "City",
+            "send_state": parsed.get("state", "State") or "State",
+            "send_code": parsed.get("postcode", "00000") or "00000",
+            "reference": "HEIMDALL-WA"
+        }]
+    }
+    
+    try:
+        response = requests.post(url, data=payload)
+        data = response.json()
+        if data.get("api_status") == "Success":
+            send_whatsapp_message(
+                sender,
+                f"Settle bos! 🎉\n\nOrder untuk *{parsed.get('recipient_name')}* dah masuk EasyParcel.\n\nBuka dashboard EasyParcel untuk print waybill. Mudah je kan?"
+            )
+        else:
+            err = data.get('error_remark', 'Unknown Error')
+            send_whatsapp_message(sender, f"Alamak bos, EasyParcel reject: *{err}* 😔")
+    except Exception as e:
+        send_whatsapp_message(sender, "Ada masalah teknikal dengan sistem EasyParcel masa ni. Cuba lagi nanti ya.")
+        
+    return {"status": "processed"}
 

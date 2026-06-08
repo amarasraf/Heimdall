@@ -381,6 +381,15 @@
       Masukkan API Key EasyParcel anda kat bawah ni.
     </p>
     <div class="auth-form" style="max-width:100%;">
+      <!-- WhatsApp Number -->
+      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 15px;">
+        <label style="font-weight:600;display:block;margin-bottom:8px;">No Telefon WhatsApp (Untuk Bot)</label>
+        <input type="text" id="whatsapp_number" placeholder="Contoh: 60123456789">
+        <p style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
+          Masukkan nombor WhatsApp anda (dengan kod negara, contoh: 6012...). Ini membolehkan Heimdall mengecam anda apabila anda mesej bot kami!
+        </p>
+      </div>
+
       <!-- EasyParcel -->
       <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
         <label style="font-weight:600;display:block;margin-bottom:8px;">EasyParcel API Key</label>
@@ -799,8 +808,16 @@ async function loadSettings() {
     });
     const keys = await r.json();
     document.getElementById('key_ep').value = keys.easyparcel || '';
+
+    const meR = await fetch('/me', {
+      headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
+    });
+    const meData = await meR.json();
+    if(meData.whatsapp_number) {
+        document.getElementById('whatsapp_number').value = meData.whatsapp_number;
+    }
   } catch(e) {
-    console.error("Error loading keys", e);
+    console.error("Error loading settings", e);
   }
 }
 
@@ -813,6 +830,7 @@ async function saveSettings() {
   const keys = {
     easyparcel: document.getElementById('key_ep').value
   };
+  const whatsappNum = document.getElementById('whatsapp_number').value;
 
   try {
     const r = await fetch('/api-keys', {
@@ -823,14 +841,26 @@ async function saveSettings() {
       },
       body: JSON.stringify({ keys })
     });
+
+    if (whatsappNum) {
+      await fetch('/whatsapp-number', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${currentSession.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ whatsapp_number: whatsappNum })
+      });
+    }
+
     if (r.ok) {
-      res.innerHTML = `<div class="status ok"><strong>✓</strong> Keys saved successfully!</div>`;
+      res.innerHTML = `<div class="status ok"><strong>✓</strong> Settings saved successfully!</div>`;
       res.classList.remove('hidden');
     } else {
       throw new Error('Failed to save');
     }
   } catch(e) {
-    res.innerHTML = `<div class="status err"><strong>✗</strong> Error saving keys.</div>`;
+    res.innerHTML = `<div class="status err"><strong>✗</strong> Error saving settings.</div>`;
     res.classList.remove('hidden');
   }
   btn.innerHTML = '💾 Save Settings';

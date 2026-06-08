@@ -89,3 +89,28 @@ def get_user_keys(user_id: str):
     if profile and profile.get("courier_keys"):
         return profile["courier_keys"]
     return {}
+
+def save_whatsapp_number(user_id: str, phone: str):
+    if not supabase:
+        return False
+    try:
+        supabase.table("user_profiles").upsert({
+            "user_id": user_id,
+            "whatsapp_number": phone
+        }).execute()
+        return True
+    except Exception as e:
+        print(f"[ERROR] save_whatsapp_number: {e}")
+        return False
+
+def get_user_by_whatsapp(phone: str):
+    if not supabase:
+        return None
+    try:
+        response = supabase.table("user_profiles").select("*").eq("whatsapp_number", phone).execute()
+        if response.data:
+            return response.data[0]
+        return None
+    except Exception as e:
+        print(f"[ERROR] get_user_by_whatsapp: {e}")
+        return None
