@@ -401,51 +401,8 @@
           <div style="padding-top:8px;">1. Log into EasyParcel.<br>2. Go to Integrations > API.<br>3. Generate a new API Key and copy it here.</div>
         </details>
       </div>
-      <!-- Ninja Van -->
-      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
-        <label style="font-weight:600;display:block;margin-bottom:8px;">Ninja Van Credentials</label>
-        <div style="display:flex;gap:10px;">
-          <input type="password" id="key_nv_client" placeholder="Client ID">
-          <input type="password" id="key_nv_secret" placeholder="Client Secret">
-        </div>
-        <details style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
-          <summary style="cursor:pointer; color:var(--primary-light);">How to get this?</summary>
-          <div style="padding-top:8px;">1. Log into Ninja Dashboard.<br>2. Go to Settings > API Keys.<br>3. Copy the Client ID and Client Secret.</div>
-        </details>
-      </div>
-      <!-- J&T Express -->
-      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
-        <label style="font-weight:600;display:block;margin-bottom:8px;">J&T Express API Key</label>
-        <input type="password" id="key_jnt" placeholder="Enter J&T Express Key">
-        <details style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
-          <summary style="cursor:pointer; color:var(--primary-light);">How to get this?</summary>
-          <div style="padding-top:8px;">1. Log into J&T VIP Portal.<br>2. Go to Account > API Management.<br>3. Copy your specific API Key.</div>
-        </details>
-      </div>
-      <!-- DHL -->
-      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
-        <label style="font-weight:600;display:block;margin-bottom:8px;">DHL eCommerce API Key</label>
-        <div style="display:flex;gap:10px;">
-          <input type="password" id="key_dhl" placeholder="API Key">
-          <input type="password" id="key_dhl_secret" placeholder="API Secret">
-        </div>
-        <details style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
-          <summary style="cursor:pointer; color:var(--primary-light);">How to get this?</summary>
-          <div style="padding-top:8px;">1. Access DHL Customer Portal.<br>2. Navigate to Developer > Credentials.<br>3. Copy both Key and Secret.</div>
-        </details>
-      </div>
-      <!-- City-Link & GDEX -->
-      <div style="display:flex;gap:15px;">
-        <div style="flex:1; background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
-          <label style="font-weight:600;display:block;margin-bottom:8px;">City-Link Key</label>
-          <input type="password" id="key_cl" placeholder="City-Link Key">
-        </div>
-        <div style="flex:1; background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
-          <label style="font-weight:600;display:block;margin-bottom:8px;">GDEX Key</label>
-          <input type="password" id="key_gdex" placeholder="GDEX Key">
-        </div>
-      </div>
-      
+      <!-- We only use EasyParcel now for maximum user friendliness -->
+
       <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
       <div id="settingsResult" class="hidden" style="margin-top:10px;"></div>
     </div>
@@ -514,12 +471,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
           <h2><span class="emoji-icon">📊</span> Results</h2>
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <button class="btn" style="width:auto;background:linear-gradient(135deg, #10b981, #059669);font-size:0.9rem;padding:10px 16px;" onclick="submitEasyParcel()">🚀 EasyParcel</button>
-            <button class="btn" style="width:auto;background:linear-gradient(135deg, #ef4444, #b91c1c);font-size:0.9rem;padding:10px 16px;" onclick="submitNinjaVan()">🥷 Ninja Van</button>
-            <button class="btn" style="width:auto;background:linear-gradient(135deg, #dc2626, #991b1b);font-size:0.9rem;padding:10px 16px;" onclick="submitJNT()">🚚 J&T</button>
-            <button class="btn" style="width:auto;background:linear-gradient(135deg, #eab308, #a16207);color:#fff;font-size:0.9rem;padding:10px 16px;" onclick="submitDHL()">📦 DHL</button>
-            <button class="btn" style="width:auto;background:linear-gradient(135deg, #f97316, #c2410c);color:#fff;font-size:0.9rem;padding:10px 16px;" onclick="submitCityLink()">🏙️ City-Link</button>
-            <button class="btn" style="width:auto;background:linear-gradient(135deg, #0ea5e9, #0369a1);color:#fff;font-size:0.9rem;padding:10px 16px;" onclick="submitGDEX()">✈️ GDEX</button>
+            <button class="btn" style="width:auto;background:linear-gradient(135deg, #10b981, #059669);font-size:0.9rem;padding:10px 16px;" onclick="submitEasyParcel()">🚀 Push to EasyParcel</button>
             <button class="btn secondary" style="width:auto;font-size:0.9rem;padding:10px 16px;" onclick="downloadCSV()">⬇ CSV</button>
           </div>
         </div>
@@ -691,13 +643,6 @@ async function loadSettings() {
     });
     const keys = await r.json();
     document.getElementById('key_ep').value = keys.easyparcel || '';
-    document.getElementById('key_nv_client').value = keys.ninjavan_client_id || '';
-    document.getElementById('key_nv_secret').value = keys.ninjavan_client_secret || '';
-    document.getElementById('key_jnt').value = keys.jnt || '';
-    document.getElementById('key_dhl').value = keys.dhl_key || '';
-    document.getElementById('key_dhl_secret').value = keys.dhl_secret || '';
-    document.getElementById('key_cl').value = keys.citylink || '';
-    document.getElementById('key_gdex').value = keys.gdex || '';
   } catch(e) {
     console.error("Error loading keys", e);
   }
@@ -710,14 +655,7 @@ async function saveSettings() {
   btn.innerHTML = '⏳ Saving...';
   
   const keys = {
-    easyparcel: document.getElementById('key_ep').value,
-    ninjavan_client_id: document.getElementById('key_nv_client').value,
-    ninjavan_client_secret: document.getElementById('key_nv_secret').value,
-    jnt: document.getElementById('key_jnt').value,
-    dhl_key: document.getElementById('key_dhl').value,
-    dhl_secret: document.getElementById('key_dhl_secret').value,
-    citylink: document.getElementById('key_cl').value,
-    gdex: document.getElementById('key_gdex').value
+    easyparcel: document.getElementById('key_ep').value
   };
 
   try {
@@ -892,155 +830,6 @@ function submitEasyParcel() {
   });
 }
 
-function submitNinjaVan() {
-  if (lastResults.length === 0) return;
-  const epResult = document.getElementById('epResult');
-  epResult.classList.remove('hidden');
-  epResult.innerHTML = `<div class="status info">⏳ Submitting to Ninja Van API...</div>`;
-
-  fetch('/submit-ninjavan', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${currentSession.access_token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ orders: lastResults })
-  })
-  .then(async r => {
-    if(!r.ok) throw new Error('Failed to submit');
-    return r.json();
-  })
-  .then(data => {
-    if(data.status === 'success') {
-      let msg = data.message || "Orders successfully created in Ninja Van!";
-      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
-      epResult.innerHTML = `<div class="status ok" style="border-color:#ef4444; color:#f87171; background:rgba(239,68,68,0.1)"><strong>✓</strong> &nbsp; ${msg}</div>`;
-    }
-  })
-  .catch(e => {
-    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
-  });
-}
-
-function submitJNT() {
-  if (lastResults.length === 0) return;
-  const epResult = document.getElementById('epResult');
-  epResult.classList.remove('hidden');
-  epResult.innerHTML = `<div class="status info">⏳ Submitting to J&T Express API...</div>`;
-
-  fetch('/submit-jnt', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${currentSession.access_token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ orders: lastResults })
-  })
-  .then(async r => {
-    if(!r.ok) throw new Error('Failed to submit');
-    return r.json();
-  })
-  .then(data => {
-    if(data.status === 'success') {
-      let msg = data.message || "Orders successfully created in J&T Express!";
-      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
-      epResult.innerHTML = `<div class="status ok" style="border-color:#dc2626; color:#fca5a5; background:rgba(220,38,38,0.1)"><strong>✓</strong> &nbsp; ${msg}</div>`;
-    }
-  })
-  .catch(e => {
-    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
-  });
-}
-
-function submitDHL() {
-  if (lastResults.length === 0) return;
-  const epResult = document.getElementById('epResult');
-  epResult.classList.remove('hidden');
-  epResult.innerHTML = `<div class="status info">⏳ Submitting to DHL API...</div>`;
-
-  fetch('/submit-dhl', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${currentSession.access_token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ orders: lastResults })
-  })
-  .then(async r => {
-    if(!r.ok) throw new Error('Failed to submit');
-    return r.json();
-  })
-  .then(data => {
-    if(data.status === 'success') {
-      let msg = data.message || "Orders successfully created in DHL!";
-      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
-      epResult.innerHTML = `<div class="status ok" style="border-color:#eab308; color:#fde047; background:rgba(234,179,8,0.1)"><strong>✓</strong> &nbsp; ${msg}</div>`;
-    }
-  })
-  .catch(e => {
-    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
-  });
-}
-
-function submitCityLink() {
-  if (lastResults.length === 0) return;
-  const epResult = document.getElementById('epResult');
-  epResult.classList.remove('hidden');
-  epResult.innerHTML = `<div class="status info">⏳ Submitting to City-Link Express...</div>`;
-
-  fetch('/submit-citylink', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${currentSession.access_token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ orders: lastResults })
-  })
-  .then(async r => {
-    if(!r.ok) throw new Error('Failed to submit');
-    return r.json();
-  })
-  .then(data => {
-    if(data.status === 'success') {
-      let msg = data.message || "Orders successfully created in City-Link Express!";
-      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
-      epResult.innerHTML = `<div class="status ok" style="border-color:#f97316; color:#fdba74; background:rgba(249,115,22,0.1)"><strong>✓</strong> &nbsp; ${msg}</div>`;
-    }
-  })
-  .catch(e => {
-    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
-  });
-}
-
-function submitGDEX() {
-  if (lastResults.length === 0) return;
-  const epResult = document.getElementById('epResult');
-  epResult.classList.remove('hidden');
-  epResult.innerHTML = `<div class="status info">⏳ Submitting to GDEX API...</div>`;
-
-  fetch('/submit-gdex', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${currentSession.access_token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ orders: lastResults })
-  })
-  .then(async r => {
-    if(!r.ok) throw new Error('Failed to submit');
-    return r.json();
-  })
-  .then(data => {
-    if(data.status === 'success') {
-      let msg = data.message || "Orders successfully created in GDEX!";
-      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
-      epResult.innerHTML = `<div class="status ok" style="border-color:#0ea5e9; color:#7dd3fc; background:rgba(14,165,233,0.1)"><strong>✓</strong> &nbsp; ${msg}</div>`;
-    }
-  })
-  .catch(e => {
-    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
-  });
-}
 
 function downloadCSV() {
   if (lastResults.length === 0) return;
