@@ -17,6 +17,11 @@ from parser_core import parse_address, parse_easyparcel_row, to_easyparcel
 from database import save_parse_result, supabase, get_user_profile, extend_subscription, get_user_keys, save_user_keys
 
 app = FastAPI(title="Heimdall", description="Malaysian Address Parser for EasyParcel")
+import os
+if not os.path.exists('static'):
+    os.makedirs('static')
+app.mount('/static', StaticFiles(directory='static'), name='static')
+
 
 security = HTTPBearer()
 
