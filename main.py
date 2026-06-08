@@ -65,7 +65,8 @@ class PhoneRequest(BaseModel):
 @app.post("/whatsapp-number")
 async def update_phone(req: PhoneRequest, user=Depends(get_current_user)):
     from database import save_whatsapp_number
-    if save_whatsapp_number(user.id, req.whatsapp_number):
+    clean_num = req.whatsapp_number.replace("+", "").replace("-", "").replace(" ", "").replace("whatsapp:", "")
+    if save_whatsapp_number(user.id, clean_num):
         return {"status": "success"}
     raise HTTPException(500, "Failed to save phone number")
 
@@ -274,19 +275,19 @@ async def whatsapp_webhook(request: Request):
     form_data = await request.form()
     
     sender = form_data.get("From", "")
+    clean_sender = sender.replace("whatsapp:", "").replace("+", "").replace("-", "").replace(" ", "")
     body = form_data.get("Body", "").strip()
     
     # 1. Check if user exists
-    profile = get_user_by_whatsapp(sender)
+    profile = get_user_by_whatsapp(clean_sender)
     
     if not profile:
-        send_whatsapp_message(
-            sender, 
-            "Maaf bos, nombor ni tak wujud dalam sistem Heimdall. 🛑\n\nSila masukkan nombor telefon WhatsApp bos (bersama kod negara spt 6012...) di ruangan *Settings* dalam website Heimdall dulu ya!"
-        )
         return {"status": "unauthorized"}
         
     user_id = profile.get("user_id")
+    keys = get_user_keys(user_id)
+    tw_sid = keys.get("twilio_sid", "")
+    tw_token = keys.get("twilio_token", "")
     
     # 2. Check subscription
     try:
@@ -294,14 +295,16 @@ async def whatsapp_webhook(request: Request):
     except HTTPException:
         send_whatsapp_message(
             sender, 
-            "Alamak bos, langganan Heimdall dah tamat tempoh! 😭\n\nSila renew di website untuk terus guna bot ni."
+            "Alamak bos, langganan Heimdall dah tamat tempoh! 😭\n\nSila renew di website untuk terus guna bot ni.",
+            tw_sid, tw_token
         )
         return {"status": "expired"}
         
     # 3. Send processing message
     send_whatsapp_message(
         sender, 
-        "Mesej diterima bos! 🚀\nTengah susun alamat dan hantar ke EasyParcel..."
+        "Mesej diterima bos! 🚀\nTengah susun alamat dan hantar ke EasyParcel...",
+        tw_sid, tw_token
     )
     
     # 4. Parse address
@@ -320,7 +323,8 @@ async def whatsapp_webhook(request: Request):
     if not ep_key:
         send_whatsapp_message(
             sender,
-            f"Alamat berjaya dikesan!\n\n*Nama:* {parsed.get('recipient_name')}\n*Phone:* {parsed.get('phone')}\n\nTAPI bos belum letak API Key EasyParcel dalam Settings. Sila letak dulu ya! 🔧"
+            f"Alamat berjaya dikesan!\n\n*Nama:* {parsed.get('recipient_name')}\n*Phone:* {parsed.get('phone')}\n\nTAPI bos belum letak API Key EasyParcel dalam Settings. Sila letak dulu ya! 🔧",
+            tw_sid, tw_token
         )
         return {"status": "no_api_key"}
         
@@ -357,13 +361,14 @@ async def whatsapp_webhook(request: Request):
         if data.get("api_status") == "Success":
             send_whatsapp_message(
                 sender,
-                f"Settle bos! 🎉\n\nOrder untuk *{parsed.get('recipient_name')}* dah masuk EasyParcel.\n\nBuka dashboard EasyParcel untuk print waybill. Mudah je kan?"
+                f"Settle bos! 🎉\n\nOrder untuk *{parsed.get('recipient_name')}* dah masuk EasyParcel.\n\nBuka dashboard EasyParcel untuk print waybill. Mudah je kan?",
+                tw_sid, tw_token
             )
         else:
             err = data.get('error_remark', 'Unknown Error')
-            send_whatsapp_message(sender, f"Alamak bos, EasyParcel reject: *{err}* 😔")
+            send_whatsapp_message(sender, f"Alamak bos, EasyParcel reject: *{err}* 😔", tw_sid, tw_token)
     except Exception as e:
-        send_whatsapp_message(sender, "Ada masalah teknikal dengan sistem EasyParcel masa ni. Cuba lagi nanti ya.")
+        send_whatsapp_message(sender, "Ada masalah teknikal dengan sistem EasyParcel masa ni. Cuba lagi nanti ya.", tw_sid, tw_token)
         
     return {"status": "processed"}
 

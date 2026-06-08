@@ -390,6 +390,14 @@
         </p>
       </div>
 
+      <!-- Twilio Keys -->
+      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 15px;">
+        <label style="font-weight:600;display:block;margin-bottom:8px;">Twilio Account SID (Khas Untuk Bot)</label>
+        <input type="text" id="twilio_sid" placeholder="Twilio Account SID" style="margin-bottom:10px;">
+        <label style="font-weight:600;display:block;margin-bottom:8px;">Twilio Auth Token</label>
+        <input type="password" id="twilio_token" placeholder="Twilio Auth Token">
+      </div>
+
       <!-- EasyParcel -->
       <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
         <label style="font-weight:600;display:block;margin-bottom:8px;">EasyParcel API Key</label>
@@ -808,6 +816,8 @@ async function loadSettings() {
     });
     const keys = await r.json();
     document.getElementById('key_ep').value = keys.easyparcel || '';
+    document.getElementById('twilio_sid').value = keys.twilio_sid || '';
+    document.getElementById('twilio_token').value = keys.twilio_token || '';
 
     const meR = await fetch('/me', {
       headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
@@ -828,7 +838,9 @@ async function saveSettings() {
   btn.innerHTML = '⏳ Saving...';
   
   const keys = {
-    easyparcel: document.getElementById('key_ep').value
+    easyparcel: document.getElementById('key_ep').value,
+    twilio_sid: document.getElementById('twilio_sid').value,
+    twilio_token: document.getElementById('twilio_token').value
   };
   const whatsappNum = document.getElementById('whatsapp_number').value;
 
