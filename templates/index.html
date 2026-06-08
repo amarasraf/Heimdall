@@ -362,9 +362,12 @@
   <div class="header">
     <div id="subBadge" class="sub-badge hidden">Loading Sub...</div>
     <div class="header-logo-container" style="cursor: pointer;" onclick="if(typeof currentSession !== 'undefined' && !currentSession) { document.getElementById('auth-section').classList.add('hidden'); document.getElementById('landing-section').classList.remove('hidden'); }">
-        <img src="/static/logo.png" alt="Heimdall Seller Companion featuring Bebbi" style="height: 100px; width: auto; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(236,72,153,0.15));">
+        <img src="/static/logo.png" alt="Heimdall Seller Companion featuring Bebbi" style="height: 160px; max-width: 90vw; width: auto; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(236,72,153,0.15)); margin-bottom: 5px;">
     </div>
-    <p>WhatsApp order → Courier-ready CSV · Khas untuk seller, J&T, Ninja Van</p>
+    <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+        <span style="background: rgba(236, 72, 153, 0.1); color: #be185d; padding: 8px 16px; border-radius: 30px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(236, 72, 153, 0.2); box-shadow: 0 4px 10px rgba(236,72,153,0.05);">✨ Ubah mesej WhatsApp jadi waybill dalam 2 saat!</span>
+        <span style="background: white; color: var(--text-muted); padding: 8px 16px; border-radius: 30px; font-weight: 500; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #f1f5f9;">📦 Khas untuk seller Ninja Van & J&T</span>
+    </div>
     <div style="position: absolute; top: 0; right: 0; display:flex; gap:10px;">
       <button id="settingsBtn" class="logout-btn hidden" style="position:relative;" onclick="toggleSettings()">⚙️ Settings</button>
       <button id="logoutBtn" class="logout-btn hidden" style="position:relative;" onclick="handleSignOut()">Logout</button>
