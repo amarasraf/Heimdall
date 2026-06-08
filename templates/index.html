@@ -378,7 +378,7 @@
   <div class="header">
     <div id="subBadge" class="sub-badge hidden">Loading Sub...</div>
     <h1><span class="emoji-icon">📦</span> Heimdall</h1>
-    <p>WhatsApp order → Courier-ready CSV · For EasyParcel, J&T, Ninja Van</p>
+    <p>WhatsApp order → Courier-ready CSV · Khas untuk seller, J&T, Ninja Van</p>
     <div style="position: absolute; top: 0; right: 0; display:flex; gap:10px;">
       <button id="settingsBtn" class="logout-btn hidden" style="position:relative;" onclick="toggleSettings()">⚙️ Settings</button>
       <button id="logoutBtn" class="logout-btn hidden" style="position:relative;" onclick="handleSignOut()">Logout</button>
@@ -387,9 +387,9 @@
 
   <!-- Settings Section -->
   <div id="settings-section" class="card hidden">
-    <h2>⚙️ Configuration & API Keys</h2>
+    <h2>⚙️ Setting Akaun</h2>
     <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
-      Heimdall allows you to connect your own courier accounts. Enter your API keys below.
+      Masukkan API Key EasyParcel anda kat bawah ni.
     </p>
     <div class="auth-form" style="max-width:100%;">
       <!-- EasyParcel -->
@@ -401,7 +401,7 @@
           <div style="padding-top:8px;">1. Log into EasyParcel.<br>2. Go to Integrations > API.<br>3. Generate a new API Key and copy it here.</div>
         </details>
       </div>
-      <!-- We only use EasyParcel now for maximum user friendliness -->
+      <!-- Sekarang kita guna EasyParcel je supaya senang kerja! -->
 
       <button class="btn" onclick="saveSettings()">💾 Save Settings</button>
       <div id="settingsResult" class="hidden" style="margin-top:10px;"></div>
@@ -410,12 +410,12 @@
 
   <!-- Auth Section -->
   <div id="auth-section" class="card">
-    <h2 style="justify-content:center;">Welcome! Please Sign In</h2>
+    <h2 style="justify-content:center;">Jom Masuk! Login Dulu</h2>
     <div class="auth-form">
-      <input type="email" id="email" placeholder="Email Address">
-      <input type="password" id="password" placeholder="Password">
-      <button class="btn" onclick="handleSignIn()">Login</button>
-      <button class="btn secondary" onclick="handleSignUp()">Sign Up (New Account)</button>
+      <input type="email" id="email" placeholder="Alamat Emel">
+      <input type="password" id="password" placeholder="Kata Laluan">
+      <button class="btn" onclick="handleSignIn()">Masuk</button>
+      <button class="btn secondary" onclick="handleSignUp()">Daftar Akaun Baru</button>
       <div id="authError" class="status err hidden" style="margin-top: 8px;"></div>
       <div id="authSuccess" class="status ok hidden" style="margin-top: 8px;"></div>
     </div>
@@ -423,12 +423,12 @@
 
   <!-- Subscription Pricing Section -->
   <div id="subscription-section" class="card hidden" style="text-align: center; padding: 50px 30px;">
-    <h2 style="justify-content:center; font-size: 2rem;"><span class="emoji-icon">🔒</span> Unlimited Parsing Locked</h2>
+    <h2 style="justify-content:center; font-size: 2rem;"><span class="emoji-icon">🔒</span> Alamak, Pas Heimdall Dah Tamat Tempoh! 🔒</h2>
     <p style="color: var(--text-muted); margin-bottom: 30px; font-size: 1.1rem; max-width: 500px; margin-left: auto; margin-right: auto;">
-      Your subscription has expired. Purchase a 30-Day Unlimited Pass via ToyyibPay (DuitNow QR or FPX) to unlock instant address parsing again.
+      Pas anda dah expired. Langgan Pas 30-Hari via DuitNow QR/FPX untuk terus guna Heimdall tanpa had.
     </p>
     <button class="btn" style="font-size: 1.2rem; padding: 16px 32px; max-width: 350px; margin: 0 auto; display: block;" onclick="purchaseSubscription()">
-      Buy 30-Day Pass (RM 30) <span class="emoji-icon">💳</span>
+      Beli Pas 30 Hari (RM 30 je) <span class="emoji-icon">💳</span>
     </button>
   </div>
 
@@ -437,7 +437,7 @@
     <!-- Text Parse -->
     <div class="card">
       <h2><span class="emoji-icon">✏️</span> Parse Address Text (Auto-Detect)</h2>
-      <textarea id="singleInput" placeholder="Paste a messy address or multiple recipients here..."></textarea>
+      <textarea id="singleInput" placeholder="Paste mesej WhatsApp pelanggan kat sini..."></textarea>
       <div style="margin: 12px 0;">
         <span class="sample-btn" onclick="fillSample('Amar Mustapha, 0171234567, No 45 Jalan Bukit, Taman Desa, 43700 Beranang, Selangor')">Sample 1</span>
         <span class="sample-btn" onclick="fillSample('Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Sembilan')">Sample 2</span>
@@ -445,8 +445,8 @@
         <span class="sample-btn" onclick="fillSample('Nama penerima : KHAIRIL AMIRIN Alamat penerima : Kolej Kediaman Satria Kasturi Alamat kedua : UTeM Durian Tunggal No. Tel penerima : 60198367089 Poskod : 76100 Nama penerima : SITI NUR HAFIZAH Alamat penerima : JALAN PULAU MELAKA 8, PULAU MELAKA, MASJID SELAT MELAKA Alamat kedua : 75000, MELAKA No. Tel penerima : 601111134347 Poskod : 75000')">Multi-Recipient</span>
       </div>
       <div class="actions">
-        <button class="btn" style="flex:1" onclick="parseSingle()">Parse Address</button>
-        <button class="btn secondary" style="width:auto" onclick="clearSingle()">Clear</button>
+        <button class="btn" style="flex:1" onclick="parseSingle()">Susun Alamat</button>
+        <button class="btn secondary" style="width:auto" onclick="clearSingle()">Padam</button>
       </div>
       <div id="singleResult" class="hidden"></div>
     </div>
@@ -455,11 +455,11 @@
     <div class="card">
       <h2><span class="emoji-icon">📂</span> Bulk Upload (CSV)</h2>
       <p style="font-size:0.9rem;color:var(--text-muted);line-height:1.5;">
-        Upload any CSV — <code>raw_text</code> (one address per row), <strong>EasyParcel export</strong> (with recipient columns),
-        or even files with multiple recipients crammed into one row.
+        Boleh upload fail Excel/CSV biasa, atau fail yang pelanggan hantar.
+        Heimdall akan automatik susun semua.
       </p>
       <label class="file-label" for="csvFile">
-        <span>📄 Choose CSV File</span>
+        <span>📄 Pilih Fail Excel/CSV</span>
       </label>
       <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="uploadCSV()">
       <div id="bulkResult"></div>
@@ -471,19 +471,19 @@
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
           <h2><span class="emoji-icon">📊</span> Results</h2>
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <button class="btn" style="width:auto;background:linear-gradient(135deg, #10b981, #059669);font-size:0.9rem;padding:10px 16px;" onclick="submitEasyParcel()">🚀 Push to EasyParcel</button>
-            <button class="btn secondary" style="width:auto;font-size:0.9rem;padding:10px 16px;" onclick="downloadCSV()">⬇ CSV</button>
+            <button class="btn" style="width:auto;background:linear-gradient(135deg, #10b981, #059669);font-size:0.9rem;padding:10px 16px;" onclick="submitEasyParcel()">🚀 Hantar ke EasyParcel</button>
+            <button class="btn secondary" style="width:auto;font-size:0.9rem;padding:10px 16px;" onclick="downloadCSV()">⬇ Download Excel</button>
           </div>
         </div>
         <div class="table-wrapper">
           <table>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Address</th>
-                <th>Postcode</th>
-                <th>State</th>
+                <th>Nama</th>
+                <th>No Telefon</th>
+                <th>Alamat</th>
+                <th>Poskod</th>
+                <th>Negeri</th>
               </tr>
             </thead>
             <tbody id="tableBody"></tbody>
