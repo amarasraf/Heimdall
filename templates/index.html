@@ -351,10 +351,7 @@
   .testimonial-card {
     background: white; border-radius: 20px; padding: 35px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); flex: 1; min-width: 280px; position: relative; border-top: 4px solid var(--primary);
   }
-  .floating-wa {
-    position: fixed; bottom: 30px; right: 30px; background: #25D366; color: white; width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(37,211,102,0.4); z-index: 1000; cursor: pointer; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-decoration: none;
-  }
-  .floating-wa:hover { transform: scale(1.15) rotate(-5deg); }
+
 
   /* Bebbi Mascot UI */
   .bebbi-bubble {
@@ -393,16 +390,16 @@
 </head>
 <body>
 <div class="container">
-  <div class="header">
-    <div id="subBadge" class="sub-badge hidden">Loading Sub...</div>
+  <div class="header" style="position: relative;">
     <div class="header-logo-container" style="cursor: pointer;" onclick="if(typeof currentSession !== 'undefined' && !currentSession) { document.getElementById('auth-section').classList.add('hidden'); document.getElementById('landing-section').classList.remove('hidden'); }">
-        <img src="/static/logo.png" alt="Heimdall Seller Companion featuring Bebbi" style="height: 160px; max-width: 90vw; width: auto; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(236,72,153,0.15)); margin-bottom: 5px;">
+        <img src="/static/logo.png" alt="Bebbi - AI Pembantu Anda" style="height: 160px; max-width: 90vw; width: auto; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(236,72,153,0.15)); margin-bottom: 5px;">
     </div>
     <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
         <span style="background: rgba(236, 72, 153, 0.1); color: #be185d; padding: 8px 16px; border-radius: 30px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(236, 72, 153, 0.2); box-shadow: 0 4px 10px rgba(236,72,153,0.05);">✨ Ubah mesej WhatsApp jadi waybill dalam 2 saat!</span>
         <span style="background: white; color: var(--text-muted); padding: 8px 16px; border-radius: 30px; font-weight: 500; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #f1f5f9;">📦 Khas untuk seller Ninja Van & J&T</span>
     </div>
-    <div style="position: absolute; top: 0; right: 0; display:flex; gap:10px;">
+    <div style="position: absolute; top: 15px; right: 15px; display:flex; gap:10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; z-index: 100;">
+      <div id="subBadge" class="sub-badge hidden" style="background: rgba(241, 245, 249, 0.95); color: #334155; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin: 0;">Loading Sub...</div>
       <button id="upgradeBtn" class="btn hidden" style="padding: 8px 16px; font-size: 0.9rem; border-radius: 30px;" onclick="document.getElementById('subscription-section').classList.remove('hidden'); document.getElementById('app-section').classList.add('hidden'); document.getElementById('settings-section').classList.add('hidden');">😻 Belanja Wetfood</button>
       <button id="settingsBtn" class="logout-btn hidden" style="position:relative; background: white; border: 1px solid #e2e8f0; border-radius: 30px; padding: 8px 16px; cursor: pointer; font-weight: 600;" onclick="toggleSettings()">⚙️ Settings</button>
       <button id="logoutBtn" class="logout-btn hidden" style="position:relative; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 30px; padding: 8px 16px; cursor: pointer; font-weight: 600;" onclick="handleSignOut()">Logout</button>
@@ -490,11 +487,11 @@
       <div style="flex: 1; min-width: 320px; text-align: left;">
         
         <!-- Bebbi Chat Bubble -->
-        <div class="bebbi-bubble">
+        <div class="bebbi-bubble" style="transform: scale(1.1); margin-bottom: 30px; transform-origin: left center;">
           <img src="/static/logo.png" alt="Bebbi" onerror="this.src='https://api.dicebear.com/7.x/bottts/svg?seed=Bebbi&backgroundColor=fbcfe8'">
           <div class="bebbi-text">
-            <strong style="color: var(--primary);">Hai, saya Bebbi! 👋</strong><br>
-            Biar saya tolong susun order makcik hari ni.
+            <strong style="color: var(--primary); font-size: 1.2rem;">Hai, saya Bebbi! 🐾</strong><br>
+            Pembantu maya (AI) yang akan uruskan semua order anda. Tak perlu pening kepala lagi!
           </div>
         </div>
 
@@ -512,7 +509,7 @@
       <div style="flex: 1; min-width: 300px; display: flex; justify-content: center; position: relative;">
         <!-- Glowing background behind image -->
         <div style="position: absolute; inset: -20px; background: radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%); z-index: 0;"></div>
-        <img src="/static/heimdall_demo.gif" alt="Demo Heimdall menyusun alamat" style="max-width: 100%; border-radius: 16px; border: 4px solid white; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1); z-index: 1;" onerror="this.src='https://images.unsplash.com/photo-1556740738-b6a63e27c4df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'; this.title='Sila letak fail heimdall_demo.gif!';">
+        <img src="/static/heimdall_demo.gif" alt="Demo Bebbi menyusun alamat" style="max-width: 100%; border-radius: 16px; border: 4px solid white; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1); z-index: 1;" onerror="this.src='https://images.unsplash.com/photo-1556740738-b6a63e27c4df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'; this.title='Sila letak fail heimdall_demo.gif!';">
       </div>
     </div>
 
@@ -549,7 +546,7 @@
 
     <!-- 3. The Solution (How It Works) -->
     <div class="glass-card" style="padding: 70px 40px; margin-bottom: 90px; text-align: center;">
-      <h3 style="font-size: 2.6rem; font-weight: 800; margin-bottom: 15px; color: #1e293b;">Biar <span class="gradient-text">Heimdall</span> Buat Kerja Anda.</h3>
+      <h3 style="font-size: 2.6rem; font-weight: 800; margin-bottom: 15px; color: #1e293b;">Biar <span class="gradient-text">Bebbi</span> Buat Kerja Anda.</h3>
       <p style="color: var(--text-muted); font-size: 1.2rem; margin-bottom: 60px; font-weight: 500;">Tak perlu pandai IT. Tiga langkah je dah siap!</p>
       
       <div style="display: flex; gap: 40px; flex-wrap: wrap; justify-content: center;">
@@ -561,7 +558,7 @@
         <div style="flex: 1; min-width: 250px;">
           <div style="width: 90px; height: 90px; background: #fdf2f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; margin: 0 auto 25px; color: var(--primary); box-shadow: 0 10px 20px rgba(236,72,153,0.15);">⚡</div>
           <h4 style="font-size: 1.4rem; margin-bottom: 12px; color: #1e293b; font-weight: 700;">2. Paste</h4>
-          <p style="color: var(--text-muted); line-height: 1.6; font-size: 1.05rem;">Paste ke dalam sistem Heimdall. Kami susun nama & poskod automatik!</p>
+          <p style="color: var(--text-muted); line-height: 1.6; font-size: 1.05rem;">Paste ke dalam sistem Bebbi. Kami susun nama & poskod automatik!</p>
         </div>
         <div style="flex: 1; min-width: 250px;">
           <div style="width: 90px; height: 90px; background: #fdf2f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; margin: 0 auto 25px; color: var(--primary); box-shadow: 0 10px 20px rgba(236,72,153,0.15);">🖨️</div>
@@ -695,10 +692,7 @@
     
   </div>
 
-  <!-- Floating WhatsApp Widget -->
-  <a href="https://wa.me/60123456789" target="_blank" class="floating-wa" title="Ada Soalan? Tanya Kami!">
-    <span style="font-size: 34px;">💬</span>
-  </a>
+
 
   <!-- Auth Section -->
   <div id="auth-section" class="card hidden">
