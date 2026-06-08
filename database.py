@@ -34,21 +34,38 @@ def save_parse_result(source: str, input_text: str, result: dict | list, user_id
     except Exception as e:
         print(f"[ERROR] save_parse_result: {e}")
 
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+DB_URL = os.getenv("DATABASE_URL")
+
+def get_db_connection():
+    if not DB_URL:
+        return None
+    return psycopg2.connect(DB_URL)
+
 def get_user_profile(user_id: str):
-    if not supabase:
-        return None
+    conn = get_db_connection()
+    if not conn: return None
     try:
-        response = supabase.table("user_profiles").select("*").eq("user_id", user_id).execute()
-        if response.data:
-            return response.data[0]
-        return None
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT * FROM user_profiles WHERE user_id = %s", (user_id,))
+            row = cur.fetchone()
+            if row:
+                # Convert datetime to ISO format string to match previous behavior
+                if row.get('subscription_end_date'):
+                    row['subscription_end_date'] = row['subscription_end_date'].isoformat()
+                return dict(row)
+            return None
     except Exception as e:
         print(f"[ERROR] get_user_profile: {e}")
         return None
+    finally:
+        conn.close()
 
 def extend_subscription(user_id: str, days: int = 30):
-    if not supabase:
-        return False
+    conn = get_db_connection()
+    if not conn: return False
     try:
         profile = get_user_profile(user_id)
         import datetime
@@ -62,27 +79,40 @@ def extend_subscription(user_id: str, days: int = 30):
             
         new_end = base_date + datetime.timedelta(days=days)
         
-        supabase.table("user_profiles").upsert({
-            "user_id": user_id,
-            "subscription_end_date": new_end.isoformat()
-        }).execute()
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO user_profiles (user_id, subscription_end_date)
+                VALUES (%s, %s)
+                ON CONFLICT (user_id) DO UPDATE 
+                SET subscription_end_date = EXCLUDED.subscription_end_date
+            """, (user_id, new_end))
+            conn.commit()
         return True
     except Exception as e:
         print(f"[ERROR] extend_subscription: {e}")
         return False
+    finally:
+        conn.close()
 
 def save_user_keys(user_id: str, keys: dict):
-    if not supabase:
-        return False
+    conn = get_db_connection()
+    if not conn: return False
     try:
-        supabase.table("user_profiles").upsert({
-            "user_id": user_id,
-            "courier_keys": keys
-        }).execute()
+        import json
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO user_profiles (user_id, courier_keys)
+                VALUES (%s, %s)
+                ON CONFLICT (user_id) DO UPDATE 
+                SET courier_keys = EXCLUDED.courier_keys
+            """, (user_id, json.dumps(keys)))
+            conn.commit()
         return True
     except Exception as e:
         print(f"[ERROR] save_user_keys: {e}")
         return False
+    finally:
+        conn.close()
 
 def get_user_keys(user_id: str):
     profile = get_user_profile(user_id)
