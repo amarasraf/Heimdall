@@ -272,6 +272,8 @@ from database import get_user_by_whatsapp, get_whatsapp_session, create_whatsapp
 
 @app.post("/webhook/whatsapp")
 async def whatsapp_webhook(request: Request):
+    import re
+    import requests
     form_data = await request.form()
     
     sender = form_data.get("From", "")
