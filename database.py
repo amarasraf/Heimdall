@@ -114,3 +114,49 @@ def get_user_by_whatsapp(phone: str):
     except Exception as e:
         print(f"[ERROR] get_user_by_whatsapp: {e}")
         return None
+
+def get_whatsapp_session(user_id: str, sender_number: str):
+    if not supabase: return None
+    try:
+        response = supabase.table("whatsapp_sessions").select("*").eq("user_id", user_id).eq("sender_number", sender_number).execute()
+        if response.data:
+            return response.data[-1]
+        return None
+    except Exception as e:
+        print(f"[ERROR] get_whatsapp_session: {e}")
+        return None
+
+def create_whatsapp_session(user_id: str, sender_number: str, state: str, parsed_address: dict, raw_message: str):
+    if not supabase: return None
+    try:
+        response = supabase.table("whatsapp_sessions").insert({
+            "user_id": user_id,
+            "sender_number": sender_number,
+            "state": state,
+            "parsed_address": parsed_address,
+            "raw_message": raw_message
+        }).execute()
+        if response.data:
+            return response.data[0]
+        return None
+    except Exception as e:
+        print(f"[ERROR] create_whatsapp_session: {e}")
+        return None
+
+def update_whatsapp_session(session_id: str, updates: dict):
+    if not supabase: return False
+    try:
+        supabase.table("whatsapp_sessions").update(updates).eq("id", session_id).execute()
+        return True
+    except Exception as e:
+        print(f"[ERROR] update_whatsapp_session: {e}")
+        return False
+
+def delete_whatsapp_session(session_id: str):
+    if not supabase: return False
+    try:
+        supabase.table("whatsapp_sessions").delete().eq("id", session_id).execute()
+        return True
+    except Exception as e:
+        print(f"[ERROR] delete_whatsapp_session: {e}")
+        return False

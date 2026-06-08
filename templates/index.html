@@ -398,6 +398,17 @@
         <input type="password" id="twilio_token" placeholder="Twilio Auth Token">
       </div>
 
+      <!-- ToyyibPay Keys -->
+      <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 15px;">
+        <label style="font-weight:600;display:block;margin-bottom:8px;">ToyyibPay Secret Key (Auto-Invoice)</label>
+        <input type="password" id="toyyibpay_secret" placeholder="Secret Key" style="margin-bottom:10px;">
+        <label style="font-weight:600;display:block;margin-bottom:8px;">ToyyibPay Category Code</label>
+        <input type="text" id="toyyibpay_category" placeholder="Category Code">
+        <p style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
+          Biar kosong jika anda nak guna manual resit / QR DuitNow.
+        </p>
+      </div>
+
       <!-- EasyParcel -->
       <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05);">
         <label style="font-weight:600;display:block;margin-bottom:8px;">EasyParcel API Key</label>
@@ -818,6 +829,8 @@ async function loadSettings() {
     document.getElementById('key_ep').value = keys.easyparcel || '';
     document.getElementById('twilio_sid').value = keys.twilio_sid || '';
     document.getElementById('twilio_token').value = keys.twilio_token || '';
+    document.getElementById('toyyibpay_secret').value = keys.toyyibpay_secret || '';
+    document.getElementById('toyyibpay_category').value = keys.toyyibpay_category || '';
 
     const meR = await fetch('/me', {
       headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
@@ -840,7 +853,9 @@ async function saveSettings() {
   const keys = {
     easyparcel: document.getElementById('key_ep').value,
     twilio_sid: document.getElementById('twilio_sid').value,
-    twilio_token: document.getElementById('twilio_token').value
+    twilio_token: document.getElementById('twilio_token').value,
+    toyyibpay_secret: document.getElementById('toyyibpay_secret').value,
+    toyyibpay_category: document.getElementById('toyyibpay_category').value
   };
   const whatsappNum = document.getElementById('whatsapp_number').value;
 

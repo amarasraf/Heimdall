@@ -268,7 +268,7 @@ async def submit_easyparcel(req: SubmitOrderRequest, user=Depends(get_current_us
         raise HTTPException(500, str(e))
 
 from whatsapp_service import send_whatsapp_message
-from database import get_user_by_whatsapp
+from database import get_user_by_whatsapp, get_whatsapp_session, create_whatsapp_session, update_whatsapp_session, delete_whatsapp_session
 
 @app.post("/webhook/whatsapp")
 async def whatsapp_webhook(request: Request):
@@ -280,7 +280,6 @@ async def whatsapp_webhook(request: Request):
     
     # 1. Check if user exists
     profile = get_user_by_whatsapp(clean_sender)
-    
     if not profile:
         return {"status": "unauthorized"}
         
@@ -293,87 +292,116 @@ async def whatsapp_webhook(request: Request):
     try:
         check_subscription(user_id)
     except HTTPException:
-        send_whatsapp_message(
-            sender, 
-            "Alamak bos, langganan Heimdall dah tamat tempoh! 😭\n\nSila renew di website untuk terus guna bot ni.",
-            tw_sid, tw_token
-        )
+        send_whatsapp_message(sender, "Alamak bos, langganan Heimdall dah tamat tempoh! 😭\n\nSila renew di website.", tw_sid, tw_token)
         return {"status": "expired"}
-        
-    # 3. Send processing message
-    send_whatsapp_message(
-        sender, 
-        "Mesej diterima bos! 🚀\nTengah susun alamat dan hantar ke EasyParcel...",
-        tw_sid, tw_token
-    )
+
+    # 3. Handle State Machine
+    session = get_whatsapp_session(user_id, sender)
     
-    # 4. Parse address
-    if re.search(r'(Nama penerima\s*:|Alamat penerima\s*:)', body, re.IGNORECASE):
-        parsed_list = parse_easyparcel_row({"recipient_name": body})
-    else:
-        parsed_list = [parse_address(body)]
-        
-    parsed = parsed_list[0]
-    save_parse_result("whatsapp", body, parsed_list, user_id)
-    
-    # 5. Send to EasyParcel
-    keys = get_user_keys(user_id)
-    ep_key = keys.get("easyparcel", EASYPARCEL_API_KEY)
-    
-    if not ep_key:
-        send_whatsapp_message(
-            sender,
-            f"Alamat berjaya dikesan!\n\n*Nama:* {parsed.get('recipient_name')}\n*Phone:* {parsed.get('phone')}\n\nTAPI bos belum letak API Key EasyParcel dalam Settings. Sila letak dulu ya! 🔧",
-            tw_sid, tw_token
-        )
-        return {"status": "no_api_key"}
-        
-    url = "https://api.easyparcel.my/ep-api/v1.2/"
-    payload = {
-        "api": ep_key,
-        "bulk": [{
-            "weight": "0.5",
-            "content": "General merchandise",
-            "value": "100",
-            "pick_point": "P1", 
-            "pick_name": "Heimdall Sender",
-            "pick_company": "Heimdall Co",
-            "pick_contact": "0123456789",
-            "pick_mobile": "0123456789",
-            "pick_addr1": "HQ",
-            "pick_city": "Kuala Lumpur",
-            "pick_state": "kuala lumpur",
-            "pick_code": "50000",
-            "send_name": parsed.get("recipient_name", "Recipient") or "Recipient",
-            "send_contact": parsed.get("phone", "0123456789") or "0123456789",
-            "send_mobile": parsed.get("phone", "0123456789") or "0123456789",
-            "send_addr1": parsed.get("street", "Address") or "Address",
-            "send_city": parsed.get("city", "City") or "City",
-            "send_state": parsed.get("state", "State") or "State",
-            "send_code": parsed.get("postcode", "00000") or "00000",
-            "reference": "HEIMDALL-WA"
-        }]
-    }
-    
-    try:
-        response = requests.post(url, data=payload)
-        data = response.json()
-        if data.get("api_status") == "Success":
-            send_whatsapp_message(
-                sender,
-                f"Settle bos! 🎉\n\nOrder untuk *{parsed.get('recipient_name')}* dah masuk EasyParcel.\n\nBuka dashboard EasyParcel untuk print waybill. Mudah je kan?",
-                tw_sid, tw_token
-            )
-        else:
-            err = data.get('error_remark', 'Unknown Error')
-            send_whatsapp_message(sender, f"Alamak bos, EasyParcel reject: *{err}* 😔", tw_sid, tw_token)
-    except Exception as e:
+    # helper for sending to easyparcel (simulated)
+    def push_to_easyparcel(parsed, tp_sid, tp_token):
         send_whatsapp_message(
             sender, 
             f"Settle bos! 🎉 (Simulasi)\n\nOrder untuk *{parsed.get('recipient_name')}* dah direkod.\n\n*(Nota: Server EasyParcel rasmi sedang offline/down sekarang, jadi order ni disimpan sebagai draf dalam Heimdall!)*", 
-            tw_sid, 
-            tw_token
+            tp_sid, tp_token
         )
+
+    if session and session.get("state") == "AWAITING_PRICE":
+        # The user replied with a price
+        import re
+        price_match = re.search(r'\d+(\.\d{1,2})?', body)
+        if not price_match:
+            send_whatsapp_message(sender, "Maaf bos, tak nampak nombor harga. Cuba taip harga je (contoh: 50 atau 12.50).", tw_sid, tw_token)
+            return {"status": "awaiting_price_retry"}
+            
+        amount = float(price_match.group(0))
+        parsed = session.get("parsed_address", {})
         
-    return {"status": "processed"}
+        # Check payment gateway preference
+        toyyib_secret = keys.get("toyyibpay_secret")
+        toyyib_category = keys.get("toyyibpay_category")
+        
+        update_whatsapp_session(session["id"], {"state": "AWAITING_RECEIPT", "amount": amount})
+        
+        if toyyib_secret and toyyib_category:
+            # Generate ToyyibPay link
+            tp_payload = {
+                'userSecretKey': toyyib_secret,
+                'categoryCode': toyyib_category,
+                'billName': f"Order {parsed.get('recipient_name', 'Customer')}",
+                'billDescription': 'Pembelian dari WhatsApp',
+                'billPriceSetting': 1,
+                'billPayorInfo': 1,
+                'billAmount': int(amount * 100),
+                'billReturnUrl': '',
+                'billCallbackUrl': 'https://heimdall-517339133458.asia-southeast1.run.app/webhook/toyyibpay',
+                'billExternalReferenceNo': str(session["id"]),
+                'billTo': parsed.get('recipient_name', 'Customer'),
+                'billEmail': 'customer@example.com',
+                'billPhone': parsed.get('phone', '0123456789'),
+            }
+            try:
+                tp_res = requests.post(f"{TOYYIBPAY_URL}/index.php/api/createBill", data=tp_payload).json()
+                bill_code = tp_res[0]['BillCode']
+                payment_link = f"{TOYYIBPAY_URL}/{bill_code}"
+                update_whatsapp_session(session["id"], {"payment_link": payment_link})
+                
+                send_whatsapp_message(
+                    sender, 
+                    f"Settle bos! Forward mesej ni kat customer:\n\n*Terima kasih, order anda RM{amount:.2f}.*\n*Sila buat pembayaran di link ini: {payment_link}*\n\nBila customer bayar, Heimdall akan auto-hantar ke EasyParcel!", 
+                    tw_sid, tw_token
+                )
+            except Exception as e:
+                send_whatsapp_message(sender, f"Gagal generate link ToyyibPay. Cek API Key bos. Error: {e}", tw_sid, tw_token)
+        else:
+            # Static DuitNow QR flow
+            send_whatsapp_message(
+                sender,
+                f"Settle bos! Forward QR DuitNow bos kat customer dan minta RM{amount:.2f}.\n\n*(Nanti saya akan bagi fungsi upload QR)*\n\n*Lepas customer bayar, bos forward resit/taip 'Dah bayar' untuk auto-generate tracking number!*",
+                tw_sid, tw_token
+            )
+        return {"status": "price_received"}
+        
+    elif session and session.get("state") == "AWAITING_RECEIPT":
+        # Usually they forward a receipt. For now, accept "paid"
+        if "bayar" in body.lower() or "paid" in body.lower():
+            send_whatsapp_message(sender, "Resit disahkan! 🚀 Tengah hantar ke EasyParcel...", tw_sid, tw_token)
+            parsed = session.get("parsed_address", {})
+            push_to_easyparcel(parsed, tw_sid, tw_token)
+            delete_whatsapp_session(session["id"])
+        else:
+            send_whatsapp_message(sender, "Sila upload gambar resit dari customer, atau taip 'Dah bayar' untuk teruskan.", tw_sid, tw_token)
+        return {"status": "awaiting_receipt"}
+        
+    else:
+        # New order! Parse Address.
+        if re.search(r'(Nama penerima\s*:|Alamat penerima\s*:)', body, re.IGNORECASE):
+            parsed_list = parse_easyparcel_row({"recipient_name": body})
+        else:
+            parsed_list = [parse_address(body)]
+            
+        parsed = parsed_list[0]
+        
+        # Check for price in the new message
+        price_match = re.search(r'RM\s*(\d+(\.\d{1,2})?)', body, re.IGNORECASE)
+        if price_match:
+            amount = float(price_match.group(1))
+            session_rec = create_whatsapp_session(user_id, sender, "AWAITING_RECEIPT", parsed, body)
+            
+            # Has price, ask for receipt directly
+            send_whatsapp_message(
+                sender,
+                f"Alamat cun, RM{amount:.2f} dikesan!\n\nSila minta customer bayar, kemudian forward resit ke sini (atau taip 'Dah bayar') untuk hantar ke EasyParcel.",
+                tw_sid, tw_token
+            )
+        else:
+            # No price found, ask for price
+            create_whatsapp_session(user_id, sender, "AWAITING_PRICE", parsed, body)
+            send_whatsapp_message(
+                sender, 
+                f"Alamat cun! Berapa ringgit nak charge *{parsed.get('recipient_name', 'customer')}* ni bos? (Taip nombor je, contoh: 50)", 
+                tw_sid, tw_token
+            )
+        
+        return {"status": "parsed"}
 
