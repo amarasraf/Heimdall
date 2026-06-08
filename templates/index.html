@@ -364,7 +364,7 @@
     align-items: center;
     gap: 15px;
     box-shadow: 0 10px 25px rgba(236,72,153,0.15);
-    animation: float 3s ease-in-out infinite;
+    animation: float 4s ease-in-out infinite;
     margin-bottom: 20px;
     position: relative;
   }
@@ -395,8 +395,8 @@
         <img src="/static/logo.png" alt="Bebbi - AI Pembantu Anda" style="height: 160px; max-width: 90vw; width: auto; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(236,72,153,0.15)); margin-bottom: 5px;">
     </div>
     <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
-        <span style="background: rgba(236, 72, 153, 0.1); color: #be185d; padding: 8px 16px; border-radius: 30px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(236, 72, 153, 0.2); box-shadow: 0 4px 10px rgba(236,72,153,0.05);">✨ Ubah mesej WhatsApp jadi waybill dalam 2 saat!</span>
-        <span style="background: white; color: var(--text-muted); padding: 8px 16px; border-radius: 30px; font-weight: 500; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #f1f5f9;">📦 Khas untuk seller Ninja Van & J&T</span>
+        <span style="background: rgba(236, 72, 153, 0.1); color: #be185d; padding: 8px 16px; border-radius: 30px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(236, 72, 153, 0.2); box-shadow: 0 4px 10px rgba(236,72,153,0.05);">✨ Bebbi tolong siapkan slip pos dalam 2 saat!</span>
+        <span style="background: white; color: var(--text-muted); padding: 8px 16px; border-radius: 30px; font-weight: 500; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #f1f5f9;">📦 Khas untuk abang & makcik yang meniaga online</span>
     </div>
     <div style="position: absolute; top: 15px; right: 15px; display:flex; gap:10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; z-index: 100;">
       <div id="subBadge" class="sub-badge hidden" style="background: rgba(241, 245, 249, 0.95); color: #334155; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin: 0;">Loading Sub...</div>
@@ -408,17 +408,17 @@
 
   <!-- Settings Section -->
   <div id="settings-section" class="card hidden">
-    <h2>⚙️ Setting Akaun</h2>
+    <h2>⚙️ Bilik Bebbi (Setting)</h2>
     <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:20px;">
-      Masukkan API Key EasyParcel anda kat bawah ni.
+      Isi maklumat di bawah supaya Bebbi boleh tolong makcik buat kerja.
     </p>
     <div class="auth-form" style="max-width:100%;">
       <!-- WhatsApp Bot (QR Code Method) -->
       <div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 15px; position: relative; border-left: 4px solid #25D366;">
         <span style="position: absolute; top: -12px; right: 20px; background: #f43f5e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 4px 10px rgba(244,63,94,0.3);">👑 Khas Pakej Wetfood</span>
-        <label style="font-weight:700;display:block;margin-bottom:8px; font-size:1.1rem;">Hubungkan WhatsApp (Auto-Reply)</label>
+        <label style="font-weight:700;display:block;margin-bottom:8px; font-size:1.1rem;">Biar Bebbi Tolong Balas WhatsApp</label>
         <p style="margin-bottom:15px; font-size:0.9rem; color:var(--text-muted);">
-          Tak perlu API leceh. Tekan butang di bawah, buka WhatsApp di phone anda (Linked Devices), dan scan QR code untuk jadikan phone anda sebagai Bot Bebbi!
+          Makcik scan je QR code kat bawah ni macam biasa guna WhatsApp Web. Nanti Bebbi tolong layan customer automatik!
         </p>
         <div style="text-align: center; margin-top: 20px; margin-bottom: 10px;">
           <div id="qrPlaceholder" style="width: 200px; height: 200px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 2px dashed #cbd5e1;">
@@ -431,9 +431,9 @@
       <!-- ToyyibPay Keys -->
       <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom: 15px; position: relative;">
         <span style="position: absolute; top: -12px; right: 20px; background: #f43f5e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 4px 10px rgba(244,63,94,0.3);">👑 Khas Pakej Wetfood</span>
-        <label style="font-weight:600;display:block;margin-bottom:8px;">ToyyibPay Secret Key (Auto-Invoice)</label>
+        <label style="font-weight:600;display:block;margin-bottom:8px;">Rahsia ToyyibPay (Untuk Auto-Resit)</label>
         <input type="password" id="toyyibpay_secret" placeholder="Secret Key" style="margin-bottom:10px;">
-        <label style="font-weight:600;display:block;margin-bottom:8px;">ToyyibPay Category Code</label>
+        <label style="font-weight:600;display:block;margin-bottom:8px;">Kod Kategori ToyyibPay</label>
         <input type="text" id="toyyibpay_category" placeholder="Category Code">
         <p style="margin-top:10px; font-size:0.85rem; color:var(--text-muted);">
           Biar kosong jika anda nak guna manual resit / QR DuitNow.
@@ -443,9 +443,9 @@
       <!-- EasyParcel -->
       <div style="background:rgba(0,0,0,0.2); padding:20px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); border-left: 4px solid var(--primary); position: relative;">
         <span style="position: absolute; top: -12px; right: 20px; background: #f43f5e; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 4px 10px rgba(244,63,94,0.3);">👑 Khas Pakej Wetfood</span>
-        <label style="font-weight:700;display:block;margin-bottom:8px; font-size:1.1rem;">Hubungkan Kurier Anda (EasyParcel)</label>
+        <label style="font-weight:700;display:block;margin-bottom:8px; font-size:1.1rem;">Biar Bebbi Tolong Panggil Abang Posmen</label>
         <p style="margin-bottom:15px; font-size:0.9rem; color:var(--text-muted);">
-          Masukkan kod rahsia EasyParcel anda di bawah supaya Heimdall boleh tolong tempah rider secara automatik untuk anda.
+          Bebbi perlukan 'API Key' dari EasyParcel untuk panggil abang posmen datang rumah ambil barang.
         </p>
         <input type="password" id="key_ep" placeholder="Tampal (Paste) kod EasyParcel anda di sini" style="margin-bottom: 10px;">
         
@@ -480,7 +480,7 @@
 
   
   <!-- Landing Section - High Converting PAS Funnel -->
-  <div id="landing-section" style="width: 100%; animation: fadeIn 0.8s ease;">
+  <div id="landing-section" style="width: 100%; animation: fadeIn 0.4s ease;">
     
     <!-- 1. The Hero Section (Hook & Urgency) -->
     <div class="glass-card" style="padding: 60px 40px; margin-bottom: 70px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 50px;">
@@ -496,10 +496,10 @@
         </div>
 
         <h2 style="font-size: 3.2rem; margin-bottom: 25px; font-weight: 800; line-height: 1.15; letter-spacing: -1px; color: #1e293b;">
-          Siapkan 100 Order Dalam 5 Minit. <br><span class="gradient-text">Tak Payah Pening Salin Alamat.</span>
+          100 Order Siap Dalam 5 Minit? <br><span class="gradient-text">Biar Bebbi Uruskan, Makcik Rilek Je.</span>
         </h2>
         <div style="background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 12px 20px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 35px; box-shadow: 0 4px 10px rgba(239,68,68,0.1); font-size: 1.1rem;">
-          <span style="font-size: 1.4rem;">🔥</span> Promo Terhad: Daftar percuma sekarang!
+          <span style="font-size: 1.4rem;">🔥</span> Daftar percuma hari ni!
         </div>
         <br>
         <button class="btn pulsing-btn" onclick="document.getElementById('auth-section').classList.remove('hidden'); document.getElementById('landing-section').classList.add('hidden'); window.scrollTo(0,0);">
@@ -515,7 +515,7 @@
 
     <!-- Trust Ribbon (SaaS Best Practice) -->
     <div style="text-align: center; margin-bottom: 90px; opacity: 0.8;">
-      <p style="font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 25px;">Sistem Berintegrasi Penuh Dengan</p>
+      <p style="font-size: 0.9rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 25px;">Bebbi Boleh Panggil Rider Dari:</p>
       <div style="display: flex; justify-content: center; gap: 50px; flex-wrap: wrap; align-items: center; filter: grayscale(100%);">
         <!-- Using text as placeholders for logos so it looks clean and not spammy -->
         <span style="font-size: 1.4rem; font-weight: 800; color: #475569; letter-spacing: -0.5px;">EasyParcel</span>
@@ -527,7 +527,7 @@
 
     <!-- 2. The Agitation Section (Pain) -->
     <div style="margin-bottom: 90px; text-align: center;">
-      <h3 style="font-size: 2.4rem; font-weight: 800; margin-bottom: 40px; color: #1e293b;">Masih Guna Cara Lama? <span style="color:var(--error);">Penat Kan?</span></h3>
+      <h3 style="font-size: 2.4rem; font-weight: 800; margin-bottom: 40px; color: #1e293b;">Masih Tulis Alamat Guna Tangan? <span style="color:var(--error);">Kesian Tangan Tu...</span></h3>
       <div style="max-width: 750px; margin: 0 auto; text-align: left;">
         <div class="pain-card">
           <span style="font-size: 1.8rem; flex-shrink: 0;">❌</span> 
@@ -535,7 +535,7 @@
         </div>
         <div class="pain-card">
           <span style="font-size: 1.8rem; flex-shrink: 0;">❌</span> 
-          <span>Typo! Tersalah tulis poskod, parcel hilang, customer mengamuk.</span>
+          <span>Typo! Tersalah tulis poskod, parcel hilang, customer pula yang mengamuk.</span>
         </div>
         <div class="pain-card">
           <span style="font-size: 1.8rem; flex-shrink: 0;">❌</span> 
@@ -546,24 +546,24 @@
 
     <!-- 3. The Solution (How It Works) -->
     <div class="glass-card" style="padding: 70px 40px; margin-bottom: 90px; text-align: center;">
-      <h3 style="font-size: 2.6rem; font-weight: 800; margin-bottom: 15px; color: #1e293b;">Biar <span class="gradient-text">Bebbi</span> Buat Kerja Anda.</h3>
-      <p style="color: var(--text-muted); font-size: 1.2rem; margin-bottom: 60px; font-weight: 500;">Tak perlu pandai IT. Tiga langkah je dah siap!</p>
+      <h3 style="font-size: 2.6rem; font-weight: 800; margin-bottom: 15px; color: #1e293b;">Biar <span class="gradient-text">Bebbi</span> Tolong Buat Kerja Makcik.</h3>
+      <p style="color: var(--text-muted); font-size: 1.2rem; margin-bottom: 60px; font-weight: 500;">Biar Bebbi tolong! 3 langkah je, senangkan?</p>
       
       <div style="display: flex; gap: 40px; flex-wrap: wrap; justify-content: center;">
         <div style="flex: 1; min-width: 250px;">
           <div style="width: 90px; height: 90px; background: #fdf2f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; margin: 0 auto 25px; color: var(--primary); box-shadow: 0 10px 20px rgba(236,72,153,0.15);">📱</div>
           <h4 style="font-size: 1.4rem; margin-bottom: 12px; color: #1e293b; font-weight: 700;">1. Copy</h4>
-          <p style="color: var(--text-muted); line-height: 1.6; font-size: 1.05rem;">Copy terus mesej alamat penuh dari WhatsApp customer anda.</p>
+          <p style="color: var(--text-muted); line-height: 1.6; font-size: 1.05rem;">Copy je mesej alamat panjang-panjang dari customer tu.</p>
         </div>
         <div style="flex: 1; min-width: 250px;">
           <div style="width: 90px; height: 90px; background: #fdf2f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; margin: 0 auto 25px; color: var(--primary); box-shadow: 0 10px 20px rgba(236,72,153,0.15);">⚡</div>
           <h4 style="font-size: 1.4rem; margin-bottom: 12px; color: #1e293b; font-weight: 700;">2. Paste</h4>
-          <p style="color: var(--text-muted); line-height: 1.6; font-size: 1.05rem;">Paste ke dalam sistem Bebbi. Kami susun nama & poskod automatik!</p>
+          <p style="color: var(--text-muted); line-height: 1.6; font-size: 1.05rem;">Paste kat sini. Bebbi tolong susunkan nama, jalan, & poskod cantik-cantik.</p>
         </div>
         <div style="flex: 1; min-width: 250px;">
           <div style="width: 90px; height: 90px; background: #fdf2f8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; margin: 0 auto 25px; color: var(--primary); box-shadow: 0 10px 20px rgba(236,72,153,0.15);">🖨️</div>
           <h4 style="font-size: 1.4rem; margin-bottom: 12px; color: #1e293b; font-weight: 700;">3. Print</h4>
-          <p style="color: var(--text-muted); line-height: 1.6; font-size: 1.05rem;">Download fail Excel kurier, ATAU biar Bebbi tolong book runner automatik! Tinggal print & tampal.</p>
+          <p style="color: var(--text-muted); line-height: 1.6; font-size: 1.05rem;">Print slip pos & tampal! Bebbi dah siapkan semua untuk abang posmen/runner.</p>
         </div>
       </div>
       <div style="margin-top: 60px;">
@@ -575,7 +575,7 @@
     <div style="margin-bottom: 100px; text-align: center;">
       <h3 style="font-size: 2.4rem; font-weight: 800; margin-bottom: 15px; color: #1e293b;">Sesuai Sangat Untuk <span style="color:var(--primary);">Peniaga Bebas</span></h3>
       <p style="color: var(--text-muted); font-size: 1.15rem; margin-bottom: 40px; max-width: 650px; margin-left: auto; margin-right: auto; line-height: 1.6;">
-        Tak guna Shopee atau TikTok Shop? Jual direct di WhatsApp, IG atau Facebook? Sistem ini memang direka khas untuk mudahkan kerja harian anda:
+        Tak reti guna Shopee atau TikTok Shop? Jual direct di WhatsApp, IG atau Facebook? Bebbi memang direka khas untuk mudahkan kerja harian anda:
       </p>
       
       <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; max-width: 900px; margin: 0 auto;">
