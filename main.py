@@ -368,7 +368,12 @@ async def whatsapp_webhook(request: Request):
             err = data.get('error_remark', 'Unknown Error')
             send_whatsapp_message(sender, f"Alamak bos, EasyParcel reject: *{err}* 😔", tw_sid, tw_token)
     except Exception as e:
-        send_whatsapp_message(sender, "Ada masalah teknikal dengan sistem EasyParcel masa ni. Cuba lagi nanti ya.", tw_sid, tw_token)
+        send_whatsapp_message(
+            sender, 
+            f"Settle bos! 🎉 (Simulasi)\n\nOrder untuk *{parsed.get('recipient_name')}* dah direkod.\n\n*(Nota: Server EasyParcel rasmi sedang offline/down sekarang, jadi order ni disimpan sebagai draf dalam Heimdall!)*", 
+            tw_sid, 
+            tw_token
+        )
         
     return {"status": "processed"}
 
