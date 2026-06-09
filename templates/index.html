@@ -728,12 +728,12 @@
   <div id="app-section" class="hidden">
     <!-- Text Parse -->
     <div class="card">
-      <h2><span class="emoji-icon">✏️</span> Parse Address Text (Auto-Detect)</h2>
-      <textarea id="singleInput" placeholder="Paste mesej WhatsApp pelanggan kat sini..."></textarea>
+      <h2><span class="emoji-icon">✏️</span> Tampal Mesej Customer Kat Sini</h2>
+      <textarea id="singleInput" placeholder="Contoh: Siti Aminah 0198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Sembilan"></textarea>
       <div style="margin: 12px 0;">
-        <span class="sample-btn" onclick="fillSample('Amar Mustapha, 0171234567, No 45 Jalan Bukit, Taman Desa, 43700 Beranang, Selangor')">Sample 1</span>
-        <span class="sample-btn" onclick="fillSample('Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Sembilan')">Sample 2</span>
-        <span class="sample-btn" onclick="fillSample('Kak Long | 0198765432 | No 8, Jalan SS15/4, Subang Jaya, 47500 Selangor')">Sample 3</span>
+        <span class="sample-btn" onclick="fillSample('Amar Mustapha, 0171234567, No 45 Jalan Bukit, Taman Desa, 43700 Beranang, Selangor')">Contoh 1</span>
+        <span class="sample-btn" onclick="fillSample('Siti Aminah 60198887766 No 12 Lorong 4, Taman Idaman, Seremban 70300 Negeri Sembilan')">Contoh 2</span>
+        <span class="sample-btn" onclick="fillSample('Kak Long | 0198765432 | No 8, Jalan SS15/4, Subang Jaya, 47500 Selangor')">Contoh 3</span>
         <span class="sample-btn" onclick="fillSample('Nama penerima : KHAIRIL AMIRIN Alamat penerima : Kolej Kediaman Satria Kasturi Alamat kedua : UTeM Durian Tunggal No. Tel penerima : 60198367089 Poskod : 76100 Nama penerima : SITI NUR HAFIZAH Alamat penerima : JALAN PULAU MELAKA 8, PULAU MELAKA, MASJID SELAT MELAKA Alamat kedua : 75000, MELAKA No. Tel penerima : 601111134347 Poskod : 75000')">Multi-Recipient</span>
       </div>
       <div class="actions">
@@ -745,13 +745,12 @@
 
     <!-- Bulk Upload -->
     <div class="card">
-      <h2><span class="emoji-icon">📂</span> Bulk Upload (CSV)</h2>
+      <h2><span class="emoji-icon">📂</span> Upload Fail Order (Excel/CSV)</h2>
       <p style="font-size:0.9rem;color:var(--text-muted);line-height:1.5;">
-        Boleh upload fail Excel/CSV biasa, atau fail yang pelanggan hantar.
-        Heimdall akan automatik susun semua.
+        Ada banyak order dalam satu fail Excel? Upload je kat sini! Nanti Bebbi tolong susunkan semua sekali jalan.
       </p>
       <label class="file-label" for="csvFile">
-        <span>📄 Pilih Fail Excel/CSV</span>
+        <span>📄 Pilih Fail Order Makcik</span>
       </label>
       <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="uploadCSV()">
       <div id="bulkResult"></div>
@@ -761,9 +760,9 @@
     <div id="resultTable" class="hidden">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
-          <h2><span class="emoji-icon">📊</span> Results</h2>
+          <h2><span class="emoji-icon">📊</span> Hasil Susunan Bebbi</h2>
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <button class="btn" style="width:auto;background:linear-gradient(135deg, #10b981, #059669);font-size:0.9rem;padding:10px 16px;" onclick="submitEasyParcel()">🚀 Hantar ke EasyParcel</button>
+            <button class="btn" style="width:auto;background:linear-gradient(135deg, #10b981, #059669);font-size:0.9rem;padding:10px 16px;" onclick="submitEasyParcel()">🚀 Tempah Rider (EasyParcel)</button>
             <button class="btn secondary" style="width:auto;font-size:0.9rem;padding:10px 16px;" onclick="downloadCSV()">⬇ Download Excel</button>
           </div>
         </div>

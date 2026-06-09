@@ -90,8 +90,8 @@ def check_subscription(user_id: str, required_tier: str = "basic"):
     if not profile or not profile.get('subscription_end_date'):
         raise HTTPException(status_code=402, detail="Langganan tamat tempoh. Sila upah Bebbi dahulu.")
     
-    end_date = datetime.datetime.fromisoformat(profile['subscription_end_date'].replace('Z', '+00:00'))
-    now = datetime.datetime.now(datetime.timezone.utc)
+    end_date = datetime.fromisoformat(profile['subscription_end_date'].replace('Z', '+00:00'))
+    now = datetime.now(timezone.utc)
     if now > end_date:
         raise HTTPException(status_code=402, detail="Langganan tamat tempoh. Sila upah Bebbi dahulu.")
         
