@@ -426,10 +426,11 @@
           Makcik scan je QR code kat bawah ni macam biasa guna WhatsApp Web. Nanti Bebbi tolong layan customer automatik!
         </p>
         <div style="text-align: center; margin-top: 20px; margin-bottom: 10px;">
-          <div id="qrPlaceholder" style="width: 200px; height: 200px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 2px dashed #cbd5e1;">
-            <span style="color: #94a3b8; font-weight: 600;">[QR Code Akan Keluar Di Sini]</span>
+          <div id="qrPlaceholder" style="width: 250px; height: 250px; background: white; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; border: 2px dashed #cbd5e1; overflow: hidden;">
+            <span id="qrStatusText" style="color: #94a3b8; font-weight: 600; padding: 20px;">[QR Code Akan Keluar Di Sini]</span>
+            <img id="qrImage" style="display: none; width: 100%; height: 100%; object-fit: contain;" alt="WhatsApp QR Code">
           </div>
-          <button class="btn" style="background: #25D366; box-shadow: 0 8px 20px rgba(37,211,102,0.3); font-size: 1rem; padding: 12px 24px;" onclick="alert('Enjin QR sedang dipasang oleh team teknikal! Akan datang tidak lama lagi.')">📱 Jana QR Code</button>
+          <button id="btnGenerateQR" class="btn" style="background: #25D366; box-shadow: 0 8px 20px rgba(37,211,102,0.3); font-size: 1rem; padding: 12px 24px;" onclick="generateWhatsAppQR()">📱 Jana QR Code</button>
         </div>
       </div>
 
@@ -776,6 +777,7 @@
               <option value="lalamove">Lalamove</option>
               <option value="ninjavan">NinjaVan</option>
               <option value="jnt">J&T Express</option>
+              <option value="poslaju">PosLaju (SendParcel)</option>
             </select>
             <button class="btn" style="width:auto;background:linear-gradient(135deg, #10b981, #059669);font-size:0.9rem;padding:10px 16px;" onclick="submitEasyParcel()">🚀 Tempah Rider Automatik</button>
             <button class="btn secondary" style="width:auto;font-size:0.9rem;padding:10px 16px;" onclick="downloadCSV()">⬇ Download Excel</button>
@@ -1167,35 +1169,88 @@ function downloadCSV() {
   if (lastResults.length === 0) return;
 
   const courier = document.getElementById('courierSelect') ? document.getElementById('courierSelect').value : 'easyparcel';
-  if (courier !== 'easyparcel') {
-      alert("Bebbi tengah tunggu team teknikal siapkan template Excel untuk " + courier.toUpperCase() + "! Nanti dah siap Bebbi bagi tahu ya.");
-      return;
+  
+  let headers = [];
+  let csvRows = [];
+
+  if (courier === 'easyparcel') {
+      headers = ['recipient_name','recipient_phone','recipient_address','recipient_postcode','recipient_city','recipient_state','parcel_content','parcel_value_rm','weight_kg','quantity'];
+      lastResults.forEach(r => {
+        csvRows.push([
+          `"${(r.recipient_name || '').replace(/"/g, '""')}"`,
+          `"${(r.phone || r.recipient_phone || '').replace(/"/g, '""')}"`,
+          `"${(r.street || r.recipient_address || '').replace(/"/g, '""')}"`,
+          `"${(r.postcode || r.recipient_postcode || '').replace(/"/g, '""')}"`,
+          `"${(r.city || r.recipient_city || '').replace(/"/g, '""')}"`,
+          `"${(r.state || r.recipient_state || '').replace(/"/g, '""')}"`,
+          '"General merchandise"', '"100"', '"0.5"', '"1"'
+        ]);
+      });
+  } else if (courier === 'lalamove') {
+      headers = ['Pick Up Contact Name','Pick Up Phone Number','Pick Up Address','Drop Off Contact Name','Drop Off Phone Number','Drop Off Address','Remarks','Vehicle Type'];
+      lastResults.forEach(r => {
+        csvRows.push([
+          '""','""','""', // Pick up details left blank for user to fill or default
+          `"${(r.recipient_name || '').replace(/"/g, '""')}"`,
+          `"${(r.phone || '').replace(/"/g, '""')}"`,
+          `"${(r.street || '')}, ${(r.postcode || '')} ${(r.city || '')}, ${(r.state || '')}".replace(/"/g, '""')`,
+          '""', '"Motorcycle"'
+        ]);
+      });
+  } else if (courier === 'ninjavan') {
+      headers = ['Tracking Number','Recipient Name','Recipient Phone','Recipient Email','Recipient Address','Recipient Postcode','Recipient City','Recipient State','Recipient Country','Parcel Weight (kg)'];
+      lastResults.forEach(r => {
+        csvRows.push([
+          '""',
+          `"${(r.recipient_name || '').replace(/"/g, '""')}"`,
+          `"${(r.phone || '').replace(/"/g, '""')}"`,
+          '""',
+          `"${(r.street || '').replace(/"/g, '""')}"`,
+          `"${(r.postcode || '').replace(/"/g, '""')}"`,
+          `"${(r.city || '').replace(/"/g, '""')}"`,
+          `"${(r.state || '').replace(/"/g, '""')}"`,
+          '"Malaysia"', '"0.5"'
+        ]);
+      });
+  } else if (courier === 'jnt') {
+      headers = ['Sender Name','Sender Phone','Sender Address','Receiver Name','Receiver Phone','Receiver Address','Receiver Postcode','Receiver City','Receiver State','Item Name','Weight'];
+      lastResults.forEach(r => {
+        csvRows.push([
+          '""','""','""', // Sender details blank
+          `"${(r.recipient_name || '').replace(/"/g, '""')}"`,
+          `"${(r.phone || '').replace(/"/g, '""')}"`,
+          `"${(r.street || '').replace(/"/g, '""')}"`,
+          `"${(r.postcode || '').replace(/"/g, '""')}"`,
+          `"${(r.city || '').replace(/"/g, '""')}"`,
+          `"${(r.state || '').replace(/"/g, '""')}"`,
+          '"Barang"', '"0.5"'
+        ]);
+      });
+  } else if (courier === 'poslaju') {
+      headers = ['receiver_name','receiver_phone','receiver_email','receiver_address_1','receiver_address_2','receiver_postcode','receiver_city','receiver_state','item_description','item_weight'];
+      lastResults.forEach(r => {
+        csvRows.push([
+          `"${(r.recipient_name || '').replace(/"/g, '""')}"`,
+          `"${(r.phone || '').replace(/"/g, '""')}"`,
+          '""',
+          `"${(r.street || '').replace(/"/g, '""')}"`,
+          '""',
+          `"${(r.postcode || '').replace(/"/g, '""')}"`,
+          `"${(r.city || '').replace(/"/g, '""')}"`,
+          `"${(r.state || '').replace(/"/g, '""')}"`,
+          '"Barang"', '"0.5"'
+        ]);
+      });
   }
 
-  const headers = ['recipient_name','recipient_phone','recipient_address','recipient_postcode','recipient_city','recipient_state','parcel_content','parcel_value_rm','weight_kg','quantity'];
   let csv = headers.join(',') + '\n';
-
-  lastResults.forEach(r => {
-    const row = [
-      `"${(r.recipient_name || '').replace(/"/g, '""')}"`,
-      `"${(r.phone || r.recipient_phone || '').replace(/"/g, '""')}"`,
-      `"${(r.street || r.recipient_address || '').replace(/"/g, '""')}"`,
-      `"${(r.postcode || r.recipient_postcode || '').replace(/"/g, '""')}"`,
-      `"${(r.city || r.recipient_city || '').replace(/"/g, '""')}"`,
-      `"${(r.state || r.recipient_state || '').replace(/"/g, '""')}"`,
-      '"General merchandise"',
-      '"100"',
-      '"0.5"',
-      '"1"',
-    ];
-    csv += row.join(',') + '\n';
-  });
+  csvRows.forEach(row => { csv += row.join(',') + '\n'; });
 
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = 'heimdall_easyparcel.csv';
+  a.download = `heimdall_${courier}_orders.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -1230,6 +1285,39 @@ function activateHeimdallSight() {
   header.style.webkitTextFillColor = 'transparent';
   
   alert("Secret Handshake Protocol Accepted. You now see all.");
+}
+
+async function generateWhatsAppQR() {
+  if (!currentSession) return;
+  const btn = document.getElementById('btnGenerateQR');
+  const statusText = document.getElementById('qrStatusText');
+  const img = document.getElementById('qrImage');
+  
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Menjana QR...';
+  statusText.style.display = 'block';
+  statusText.innerHTML = 'Tunggu sekejap ya...';
+  img.style.display = 'none';
+
+  try {
+    const res = await fetch('/whatsapp/qr', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.qr_base64) {
+      statusText.style.display = 'none';
+      img.src = `data:image/png;base64,${data.qr_base64}`;
+      img.style.display = 'block';
+      btn.innerHTML = '✅ Berjaya';
+    } else {
+      throw new Error(data.detail || data.message || 'Gagal menjana QR');
+    }
+  } catch (err) {
+    statusText.innerHTML = `❌ Ralat: ${err.message}`;
+    btn.innerHTML = '📱 Cuba Lagi';
+    btn.disabled = false;
+  }
 }
 </script>
 </body>
