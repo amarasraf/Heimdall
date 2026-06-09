@@ -1288,37 +1288,61 @@ function activateHeimdallSight() {
   alert("Secret Handshake Protocol Accepted. You now see all.");
 }
 
+let qrInterval = null;
+
 async function generateWhatsAppQR() {
   if (!currentSession) return;
   const btn = document.getElementById('btnGenerateQR');
   const statusText = document.getElementById('qrStatusText');
   const img = document.getElementById('qrImage');
   
+  // Clear any existing interval
+  if (qrInterval) clearInterval(qrInterval);
+  
+  const fetchQR = async () => {
+    try {
+      const res = await fetch('/whatsapp/qr', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.qr_base64) {
+        statusText.style.display = 'none';
+        img.src = `data:image/png;base64,${data.qr_base64}`;
+        img.style.display = 'block';
+        btn.innerHTML = '✅ Berjaya (Akan refresh setiap 15s)';
+      } else if (res.ok && data.message.includes("disambungkan")) {
+        // Connected!
+        if (qrInterval) clearInterval(qrInterval);
+        statusText.style.display = 'block';
+        statusText.style.color = '#10b981';
+        statusText.innerHTML = '🎉 WhatsApp Makcik Sudah Bersambung!';
+        img.style.display = 'none';
+        btn.innerHTML = '✅ Linked';
+        btn.disabled = true;
+      } else {
+        throw new Error(data.detail || data.message || 'Gagal menjana QR');
+      }
+    } catch (err) {
+      if (qrInterval) clearInterval(qrInterval);
+      statusText.style.display = 'block';
+      statusText.innerHTML = `❌ Ralat: ${err.message}`;
+      btn.innerHTML = '📱 Cuba Lagi';
+      btn.disabled = false;
+    }
+  };
+
   btn.disabled = true;
   btn.innerHTML = '⏳ Menjana QR...';
   statusText.style.display = 'block';
   statusText.innerHTML = 'Tunggu sekejap ya...';
   img.style.display = 'none';
 
-  try {
-    const res = await fetch('/whatsapp/qr', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
-    });
-    const data = await res.json();
-    if (res.ok && data.qr_base64) {
-      statusText.style.display = 'none';
-      img.src = `data:image/png;base64,${data.qr_base64}`;
-      img.style.display = 'block';
-      btn.innerHTML = '✅ Berjaya';
-    } else {
-      throw new Error(data.detail || data.message || 'Gagal menjana QR');
-    }
-  } catch (err) {
-    statusText.innerHTML = `❌ Ralat: ${err.message}`;
-    btn.innerHTML = '📱 Cuba Lagi';
-    btn.disabled = false;
-  }
+  // Fetch immediately
+  await fetchQR();
+  
+  // Then fetch every 15 seconds
+  qrInterval = setInterval(fetchQR, 15000);
 }
 </script>
 </body>
