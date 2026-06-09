@@ -617,10 +617,14 @@ async def generate_whatsapp_qr(request: Request, user=Depends(get_current_user))
                     "webhook": {"url": webhook_url, "byEvents": False, "base64": False, "events": ["MESSAGES_UPSERT"]}
                 }
                 res = requests.post(f"{EVOLUTION_API_URL}/instance/create", json=create_payload, headers=headers, timeout=10)
+                if res.status_code >= 400:
+                    raise HTTPException(status_code=res.status_code, detail=f"Gagal mencipta instance Evolution API: {res.text}")
                 data = res.json()
                 if "qrcode" in data and "base64" in data["qrcode"]:
                     real_qr_base64 = data["qrcode"]["base64"].replace("data:image/png;base64,", "")
                     return {"status": "success", "qr_base64": real_qr_base64, "message": "Sila scan QR code sebenar ini!"}
+                else:
+                    raise HTTPException(status_code=400, detail="Evolution API tidak membekalkan QR code semasa penciptaan instance.")
             else:
                 data = conn_res.json()
                 if "base64" in data:
@@ -628,23 +632,17 @@ async def generate_whatsapp_qr(request: Request, user=Depends(get_current_user))
                     return {"status": "success", "qr_base64": real_qr_base64, "message": "Sila scan QR code sebenar ini!"}
                 elif "instance" in data and data["instance"].get("state") == "open":
                     return {"status": "success", "message": "WhatsApp sudah disambungkan! (Linked)", "qr_base64": ""}
+                else:
+                    raise HTTPException(status_code=400, detail="Evolution API belum sedia memberikan QR code. Sila tunggu seketika.")
                     
         except Exception as api_err:
-            print(f"Evolution API not reachable: {api_err}. Falling back to mock QR.")
-
-        # 2. Fallback to Mock QR if Evolution API is offline or errors
-        qr = qrcode.QRCode(version=1, box_size=10, border=4)
-        qr.add_data("mock_whatsapp_qr_for_user_" + str(user.id) + "_evolution_api_is_offline")
-        qr.make(fit=True)
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        buffered = BytesIO()
-        img.save(buffered, format="PNG")
-        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-        
-        return {"status": "success", "qr_base64": img_str, "message": "[MOCK] Evolution API offline. Sila buka server Evolution API."}
+            if isinstance(api_err, HTTPException):
+                raise api_err
+            raise HTTPException(status_code=503, detail=f"Evolution API offline atau tidak dapat dihubungi: {str(api_err)}")
     except Exception as e:
-        return JSONResponse(status_code=500, content={"detail": str(e)})
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/whatsapp/logout")
 async def whatsapp_logout(user=Depends(get_current_user)):
