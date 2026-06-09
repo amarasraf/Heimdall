@@ -245,22 +245,27 @@ async def upload_csv(file: UploadFile = File(...), user=Depends(get_current_user
 
     results = []
 
-    if has_raw_text:
-        from parser_core import to_easyparcel
-        for _, row in df.iterrows():
-            parsed = parse_address(str(row['raw_text']))
-            results.append(to_easyparcel(parsed))
+    try:
+        if has_raw_text:
+            for _, row in df.iterrows():
+                parsed = parse_address(str(row['raw_text']))
+                results.append(to_easyparcel(parsed))
 
-    elif has_easyparcel_cols:
-        for _, row in df.iterrows():
-            parsed_rows = parse_easyparcel_row(row)
-            results.extend(parsed_rows)
+        elif has_easyparcel_cols:
+            for _, row in df.iterrows():
+                parsed_rows = parse_easyparcel_row(row)
+                results.extend(parsed_rows)
 
-    else:
-        first_col = df.columns[0]
-        for _, row in df.iterrows():
-            parsed = parse_address(str(row[first_col]))
-            results.append(to_easyparcel(parsed))
+        else:
+            first_col = df.columns[0]
+            for _, row in df.iterrows():
+                val = str(row[first_col])
+                if pd.isna(row[first_col]) or val.strip() == "" or val.lower() == "nan":
+                    continue
+                parsed = parse_address(val)
+                results.append(to_easyparcel(parsed))
+    except Exception as e:
+        raise HTTPException(400, f"Error processing file rows: {str(e)}")
 
     save_parse_result("bulk", f"CSV Upload: {file.filename} ({len(df)} rows)", results, user.id)
     return JSONResponse({"results": len(results), "data": results})
