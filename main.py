@@ -463,10 +463,11 @@ PENTING: Anda MESTI membalas dalam format JSON sahaja.
         if has_media:
             base64_data = get_whatsapp_media(instance_name, message_data)
             if base64_data:
-                # Format required by Gemini for base64 media
+                # Format required by Gemini (raw bytes)
+                raw_bytes = base64.b64decode(base64_data)
                 contents.append({
                     "mime_type": mime_type,
-                    "data": base64_data
+                    "data": raw_bytes
                 })
         
         if text and text != "[VOICE NOTE RECEIVED]":
@@ -508,13 +509,33 @@ async def generate_whatsapp_qr(request: Request, user=Depends(get_current_user))
         instance_name = f"bebbi_user_{user.id}"
         headers = {"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"}
         
+        # Calculate correct webhook URL (handling Cloud Run proxy headers)
+        forwarded_host = request.headers.get("x-forwarded-host")
+        if forwarded_host:
+            proto = request.headers.get("x-forwarded-proto", "https")
+            base_url = f"{proto}://{forwarded_host}"
+        else:
+            base_url = str(request.base_url).rstrip("/")
+        webhook_url = f"{base_url}/webhook/evolution"
+        
+        # ALWAYS ensure webhook is set for this instance
+        webhook_payload = {
+            "url": webhook_url,
+            "webhook_by_events": False,
+            "webhook_base64": False,
+            "events": ["MESSAGES_UPSERT"]
+        }
+        try:
+            requests.post(f"{EVOLUTION_API_URL}/webhook/set/{instance_name}", json=webhook_payload, headers=headers, timeout=5)
+        except Exception as e:
+            print(f"[ERROR] Failed to set webhook: {e}")
+            
         try:
             # 1. Check if instance already exists by trying to connect
             conn_res = requests.get(f"{EVOLUTION_API_URL}/instance/connect/{instance_name}", headers=headers, timeout=5)
             
             if conn_res.status_code == 404:
                 # Instance doesn't exist, create it with dynamic webhook
-                webhook_url = str(request.base_url).rstrip("/") + "/webhook/evolution"
                 create_payload = {
                     "instanceName": instance_name, 
                     "token": instance_name, 
@@ -523,16 +544,6 @@ async def generate_whatsapp_qr(request: Request, user=Depends(get_current_user))
                     "webhook_events": ["MESSAGES_UPSERT"]
                 }
                 res = requests.post(f"{EVOLUTION_API_URL}/instance/create", json=create_payload, headers=headers, timeout=5)
-                
-                # Set Webhook immediately after creation
-                webhook_payload = {
-                    "url": webhook_url,
-                    "webhook_by_events": False,
-                    "webhook_base64": False,
-                    "events": ["MESSAGES_UPSERT"]
-                }
-                requests.post(f"{EVOLUTION_API_URL}/webhook/set/{instance_name}", json=webhook_payload, headers=headers, timeout=5)
-                
                 data = res.json()
                 if "qrcode" in data and "base64" in data["qrcode"]:
                     real_qr_base64 = data["qrcode"]["base64"].replace("data:image/png;base64,", "")
