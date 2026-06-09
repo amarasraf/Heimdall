@@ -364,9 +364,17 @@ def send_whatsapp_reply(instance_name, remote_jid, text):
         "textMessage": {"text": text}
     }
     try:
-        requests.post(url, json=payload, headers=headers, timeout=5)
+        res = requests.post(url, json=payload, headers=headers, timeout=5)
+        if res.status_code != 200 and supabase:
+            try:
+                supabase.table("parse_history").insert({"user_id": "system_error", "items_json": {"error": res.text, "payload": payload}}).execute()
+            except: pass
     except Exception as e:
         print(f"[ERROR] Failed to send WA reply: {e}")
+        if supabase:
+            try:
+                supabase.table("parse_history").insert({"user_id": "system_error", "items_json": {"error": str(e)}}).execute()
+            except: pass
 
 @app.get("/webhook/debug/logs")
 async def get_webhook_logs():
