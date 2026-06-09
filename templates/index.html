@@ -390,19 +390,24 @@
 </head>
 <body>
 <div class="container">
-  <div class="header" style="position: relative;">
-    <div class="header-logo-container" style="cursor: pointer;" onclick="if(typeof currentSession !== 'undefined' && !currentSession) { document.getElementById('auth-section').classList.add('hidden'); document.getElementById('landing-section').classList.remove('hidden'); }">
-        <img src="/static/logo.png" alt="Bebbi - AI Pembantu Anda" style="height: 160px; max-width: 90vw; width: auto; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(236,72,153,0.15)); margin-bottom: 5px;">
+  <div class="header" style="display: flex; flex-direction: column; align-items: center; gap: 15px; padding-top: 15px; position: relative;">
+    <!-- Top Action Bar -->
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%; z-index: 100;">
+      <div id="subBadge" class="sub-badge hidden" style="background: rgba(241, 245, 249, 0.95); color: #334155; padding: 8px 16px; border-radius: 30px; font-size: 0.9rem; font-weight: 700; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin: 0; display:flex; align-items:center;">Loading Sub...</div>
+      <button id="upgradeBtn" class="btn hidden" style="padding: 8px 16px; font-size: 0.9rem; border-radius: 30px; margin: 0;" onclick="document.getElementById('subscription-section').classList.remove('hidden'); document.getElementById('app-section').classList.add('hidden'); document.getElementById('settings-section').classList.add('hidden');">😻 Belanja Wetfood</button>
+      <button id="settingsBtn" class="logout-btn hidden" style="background: white; border: 1px solid #e2e8f0; border-radius: 30px; padding: 8px 16px; cursor: pointer; font-weight: 600; margin: 0;" onclick="toggleSettings()">⚙️ Settings</button>
+      <button id="logoutBtn" class="logout-btn hidden" style="background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 30px; padding: 8px 16px; cursor: pointer; font-weight: 600; margin: 0;" onclick="handleSignOut()">Logout</button>
     </div>
+
+    <!-- Logo -->
+    <div class="header-logo-container" style="cursor: pointer;" onclick="if(typeof currentSession !== 'undefined' && !currentSession) { document.getElementById('auth-section').classList.add('hidden'); document.getElementById('landing-section').classList.remove('hidden'); }">
+        <img src="/static/logo.png" alt="Bebbi - AI Pembantu Anda" style="height: 140px; max-width: 90vw; width: auto; object-fit: contain; filter: drop-shadow(0 8px 15px rgba(236,72,153,0.15)); margin-bottom: 5px;">
+    </div>
+
+    <!-- Taglines -->
     <div style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
         <span style="background: rgba(236, 72, 153, 0.1); color: #be185d; padding: 8px 16px; border-radius: 30px; font-weight: 600; font-size: 1rem; border: 1px solid rgba(236, 72, 153, 0.2); box-shadow: 0 4px 10px rgba(236,72,153,0.05);">✨ Bebbi tolong siapkan slip pos dalam 2 saat!</span>
         <span style="background: white; color: var(--text-muted); padding: 8px 16px; border-radius: 30px; font-weight: 500; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #f1f5f9;">📦 Khas untuk abang & makcik yang meniaga online</span>
-    </div>
-    <div style="position: absolute; top: 15px; right: 15px; display:flex; gap:10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; z-index: 100;">
-      <div id="subBadge" class="sub-badge hidden" style="background: rgba(241, 245, 249, 0.95); color: #334155; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; border: 1px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin: 0;">Loading Sub...</div>
-      <button id="upgradeBtn" class="btn hidden" style="padding: 8px 16px; font-size: 0.9rem; border-radius: 30px;" onclick="document.getElementById('subscription-section').classList.remove('hidden'); document.getElementById('app-section').classList.add('hidden'); document.getElementById('settings-section').classList.add('hidden');">😻 Belanja Wetfood</button>
-      <button id="settingsBtn" class="logout-btn hidden" style="position:relative; background: white; border: 1px solid #e2e8f0; border-radius: 30px; padding: 8px 16px; cursor: pointer; font-weight: 600;" onclick="toggleSettings()">⚙️ Settings</button>
-      <button id="logoutBtn" class="logout-btn hidden" style="position:relative; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 30px; padding: 8px 16px; cursor: pointer; font-weight: 600;" onclick="handleSignOut()">Logout</button>
     </div>
   </div>
 
