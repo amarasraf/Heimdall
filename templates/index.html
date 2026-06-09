@@ -431,6 +431,7 @@
             <img id="qrImage" style="display: none; width: 100%; height: 100%; object-fit: contain;" alt="WhatsApp QR Code">
           </div>
           <button id="btnGenerateQR" class="btn" style="background: #25D366; box-shadow: 0 8px 20px rgba(37,211,102,0.3); font-size: 1rem; padding: 12px 24px;" onclick="generateWhatsAppQR()">📱 Jana QR Code</button>
+          <button id="btnLogoutWA" class="btn" style="background: #ef4444; box-shadow: 0 8px 20px rgba(239,68,68,0.3); font-size: 0.85rem; padding: 10px 20px; margin-top: 10px;" onclick="logoutWhatsApp()">🔌 Log Keluar WhatsApp</button>
         </div>
       </div>
 
@@ -1343,6 +1344,42 @@ async function generateWhatsAppQR() {
   
   // Then fetch every 15 seconds
   qrInterval = setInterval(fetchQR, 15000);
+}
+
+async function logoutWhatsApp() {
+  if (!currentSession) return;
+  if (!confirm('Log keluar WhatsApp? Anda perlu scan QR code baru selepas ini.')) return;
+  
+  const btn = document.getElementById('btnLogoutWA');
+  const statusText = document.getElementById('qrStatusText');
+  const img = document.getElementById('qrImage');
+  const qrBtn = document.getElementById('btnGenerateQR');
+  
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Logging out...';
+  
+  try {
+    const res = await fetch('/whatsapp/logout', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${currentSession.access_token}` }
+    });
+    const data = await res.json();
+    
+    if (qrInterval) clearInterval(qrInterval);
+    
+    statusText.style.display = 'block';
+    statusText.style.color = '#f59e0b';
+    statusText.innerHTML = '🔌 WhatsApp telah dilog keluar. Sila klik Jana QR Code.';
+    img.style.display = 'none';
+    qrBtn.innerHTML = '📱 Jana QR Code';
+    qrBtn.disabled = false;
+    btn.innerHTML = '🔌 Log Keluar WhatsApp';
+    btn.disabled = false;
+  } catch (err) {
+    btn.innerHTML = '🔌 Log Keluar WhatsApp';
+    btn.disabled = false;
+    alert('Gagal log keluar: ' + err.message);
+  }
 }
 </script>
 </body>

@@ -585,7 +585,12 @@ async def generate_whatsapp_qr(request: Request, user=Depends(get_current_user))
             "events": ["MESSAGES_UPSERT"]
         }
         try:
-            requests.post(f"{EVOLUTION_API_URL}/webhook/set/{instance_name}", json=webhook_payload, headers=headers, timeout=5)
+            # Try v1 format first
+            res_wh = requests.post(f"{EVOLUTION_API_URL}/webhook/set/{instance_name}", json=webhook_payload, headers=headers, timeout=5)
+            if res_wh.status_code >= 400:
+                # Try v2 format
+                webhook_payload_v2 = {"webhook": {"url": webhook_url, "byEvents": False, "base64": False, "events": ["MESSAGES_UPSERT"]}}
+                requests.put(f"{EVOLUTION_API_URL}/webhook/set/{instance_name}", json=webhook_payload_v2, headers=headers, timeout=5)
         except Exception as e:
             print(f"[ERROR] Failed to set webhook: {e}")
             
@@ -599,10 +604,10 @@ async def generate_whatsapp_qr(request: Request, user=Depends(get_current_user))
                     "instanceName": instance_name, 
                     "token": instance_name, 
                     "qrcode": True,
-                    "webhook": webhook_url,
-                    "webhook_events": ["MESSAGES_UPSERT"]
+                    "integration": "WHATSAPP-BAILEYS",
+                    "webhook": {"url": webhook_url, "byEvents": False, "base64": False, "events": ["MESSAGES_UPSERT"]}
                 }
-                res = requests.post(f"{EVOLUTION_API_URL}/instance/create", json=create_payload, headers=headers, timeout=5)
+                res = requests.post(f"{EVOLUTION_API_URL}/instance/create", json=create_payload, headers=headers, timeout=10)
                 data = res.json()
                 if "qrcode" in data and "base64" in data["qrcode"]:
                     real_qr_base64 = data["qrcode"]["base64"].replace("data:image/png;base64,", "")
@@ -629,6 +634,28 @@ async def generate_whatsapp_qr(request: Request, user=Depends(get_current_user))
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
         
         return {"status": "success", "qr_base64": img_str, "message": "[MOCK] Evolution API offline. Sila buka server Evolution API."}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
+
+@app.post("/whatsapp/logout")
+async def whatsapp_logout(user=Depends(get_current_user)):
+    try:
+        instance_name = f"bebbi_user_{user.id}"
+        headers = {"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"}
+        
+        # Logout first
+        try:
+            requests.delete(f"{EVOLUTION_API_URL}/instance/logout/{instance_name}", headers=headers, timeout=5)
+        except:
+            pass
+        
+        # Then delete the instance
+        try:
+            requests.delete(f"{EVOLUTION_API_URL}/instance/delete/{instance_name}", headers=headers, timeout=5)
+        except:
+            pass
+            
+        return {"status": "success", "message": "WhatsApp telah dilog keluar. Sila scan QR code baru."}
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": str(e)})
 
