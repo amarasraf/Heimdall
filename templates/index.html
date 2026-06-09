@@ -1189,11 +1189,12 @@ function downloadCSV() {
   } else if (courier === 'lalamove') {
       headers = ['Pick Up Contact Name','Pick Up Phone Number','Pick Up Address','Drop Off Contact Name','Drop Off Phone Number','Drop Off Address','Remarks','Vehicle Type'];
       lastResults.forEach(r => {
+        const fullAddr = `${r.street || ''}, ${r.postcode || ''} ${r.city || ''}, ${r.state || ''}`;
         csvRows.push([
           '""','""','""', // Pick up details left blank for user to fill or default
           `"${(r.recipient_name || '').replace(/"/g, '""')}"`,
           `"${(r.phone || '').replace(/"/g, '""')}"`,
-          `"${(r.street || '')}, ${(r.postcode || '')} ${(r.city || '')}, ${(r.state || '')}".replace(/"/g, '""')`,
+          `"${fullAddr.replace(/"/g, '""')}"`,
           '""', '"Motorcycle"'
         ]);
       });
