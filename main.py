@@ -349,19 +349,19 @@ from io import BytesIO
 
 @app.post("/whatsapp/qr")
 async def generate_whatsapp_qr(user=Depends(get_current_user)):
-    # This acts as a mock/scaffold connecting to Evolution API.
-    # In a real setup, we would call the Evolution API /instance/create and /instance/connect endpoints here.
-    qr = qrcode.QRCode(version=1, box_size=10, border=4)
-    # Placeholder data that would normally be a real WhatsApp login string
-    qr.add_data("mock_whatsapp_qr_code_for_evolution_api_" + user.id)
-    qr.make(fit=True)
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    buffered = BytesIO()
-    img.save(buffered, format="PNG")
-    img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
-    
-    return {"status": "success", "qr_base64": img_str, "message": "Sila scan QR code ini dengan WhatsApp makcik."}
+    try:
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data("mock_whatsapp_qr_code_for_evolution_api_" + str(user.id))
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        
+        return {"status": "success", "qr_base64": img_str, "message": "Sila scan QR code ini dengan WhatsApp makcik."}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"detail": str(e)})
 
 @app.post("/create-bill")
 async def create_bill(tier: str = "pro", user=Depends(get_current_user)):
