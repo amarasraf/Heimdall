@@ -761,8 +761,14 @@
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
           <h2><span class="emoji-icon">📊</span> Hasil Susunan Bebbi</h2>
-          <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <button class="btn" style="width:auto;background:linear-gradient(135deg, #10b981, #059669);font-size:0.9rem;padding:10px 16px;" onclick="submitEasyParcel()">🚀 Tempah Rider (EasyParcel)</button>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+            <select id="courierSelect" class="btn secondary" style="padding:10px 16px; border-radius:30px; border:1px solid #cbd5e1; background:white; color:#334155; font-size:0.9rem; font-weight:600; cursor:pointer; width:auto; appearance:auto; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+              <option value="easyparcel">EasyParcel</option>
+              <option value="lalamove">Lalamove</option>
+              <option value="ninjavan">NinjaVan</option>
+              <option value="jnt">J&T Express</option>
+            </select>
+            <button class="btn" style="width:auto;background:linear-gradient(135deg, #10b981, #059669);font-size:0.9rem;padding:10px 16px;" onclick="submitEasyParcel()">🚀 Tempah Rider Automatik</button>
             <button class="btn secondary" style="width:auto;font-size:0.9rem;padding:10px 16px;" onclick="downloadCSV()">⬇ Download Excel</button>
           </div>
         </div>
@@ -1116,7 +1122,7 @@ function submitEasyParcel() {
   if (lastResults.length === 0) return;
   const epResult = document.getElementById('epResult');
   epResult.classList.remove('hidden');
-  epResult.innerHTML = `<div class="status info">⏳ Submitting to EasyParcel API...</div>`;
+  epResult.innerHTML = `<div class="status info">Bebbi tengah panggil abang posmen (EasyParcel)... Sabar jap ya makcik!</div>`;
 
   fetch('/submit-easyparcel', {
     method: 'POST',
@@ -1127,24 +1133,35 @@ function submitEasyParcel() {
     body: JSON.stringify({ orders: lastResults })
   })
   .then(async r => {
-    if(!r.ok) throw new Error('Failed to submit');
+    if(!r.ok) {
+        const errData = await r.json().catch(()=>null);
+        if(errData && errData.detail) throw new Error(errData.detail);
+        if(r.status === 401 || r.status === 403) throw new Error("Makcik belum login atau akses dah tamat.");
+        throw new Error("Bebbi tak dapat connect. Makcik dah letak 'API Key' kat Bilik Bebbi belum?");
+    }
     return r.json();
   })
   .then(data => {
     if(data.status === 'success') {
-      let msg = data.message || "Orders successfully created in EasyParcel!";
-      if(data.tracking_numbers) msg += "<br><small>Tracking Nos: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
-      epResult.innerHTML = `<div class="status ok"><strong>✓</strong> &nbsp; ${msg}</div>`;
+      let msg = data.message || "Yay! Rider EasyParcel dah berjaya ditempah!";
+      if(data.tracking_numbers) msg += "<br><small>No Tracking: " + data.tracking_numbers.slice(0,3).join(", ") + (data.tracking_numbers.length>3?"...":"") + "</small>";
+      epResult.innerHTML = `<div class="status ok"><strong>✅</strong> &nbsp; ${msg}</div>`;
     }
   })
   .catch(e => {
-    epResult.innerHTML = `<div class="status err"><strong>✗</strong> &nbsp; Error: ${e.message}</div>`;
+    epResult.innerHTML = `<div class="status err"><strong>❌ Alamak:</strong> &nbsp; ${e.message}</div>`;
   });
 }
 
 
 function downloadCSV() {
   if (lastResults.length === 0) return;
+
+  const courier = document.getElementById('courierSelect') ? document.getElementById('courierSelect').value : 'easyparcel';
+  if (courier !== 'easyparcel') {
+      alert("Bebbi tengah tunggu team teknikal siapkan template Excel untuk " + courier.toUpperCase() + "! Nanti dah siap Bebbi bagi tahu ya.");
+      return;
+  }
 
   const headers = ['recipient_name','recipient_phone','recipient_address','recipient_postcode','recipient_city','recipient_state','parcel_content','parcel_value_rm','weight_kg','quantity'];
   let csv = headers.join(',') + '\n';
