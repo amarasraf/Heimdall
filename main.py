@@ -368,10 +368,23 @@ def send_whatsapp_reply(instance_name, remote_jid, text):
     except Exception as e:
         print(f"[ERROR] Failed to send WA reply: {e}")
 
+@app.get("/webhook/debug/logs")
+async def get_webhook_logs():
+    try:
+        with open("webhook_debug.log", "r") as f:
+            return PlainTextResponse(f.read())
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/webhook/evolution")
 async def evolution_webhook(request: Request, background_tasks: BackgroundTasks):
     try:
         payload = await request.json()
+        
+        # DEBUG: Log payload to file
+        with open("webhook_debug.log", "a") as f:
+            f.write(json.dumps(payload) + "\n")
+            
         print(f"[WEBHOOK] Received: {json.dumps(payload)[:200]}...")
         
         # Evolution API v1.x / v2.x payload parsing
