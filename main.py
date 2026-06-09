@@ -347,11 +347,42 @@ import qrcode
 import base64
 from io import BytesIO
 
+import os
+import requests
+
+EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "http://localhost:8080")
+EVOLUTION_GLOBAL_KEY = os.getenv("EVOLUTION_GLOBAL_KEY", "bebbi_secret_token_123")
+
 @app.post("/whatsapp/qr")
 async def generate_whatsapp_qr(user=Depends(get_current_user)):
     try:
+        instance_name = f"bebbi_user_{user.id}"
+        
+        # 1. Try to fetch real QR from Evolution API
+        headers = {"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"}
+        
+        # Create instance (safe to call even if it already exists)
+        create_payload = {
+            "instanceName": instance_name,
+            "token": instance_name,
+            "qrcode": True
+        }
+        
+        try:
+            # We wrap this in a try-except so if Evolution API is offline, we fallback to mock
+            res = requests.post(f"{EVOLUTION_API_URL}/instance/create", json=create_payload, headers=headers, timeout=5)
+            data = res.json()
+            
+            if "qrcode" in data and data["qrcode"]:
+                # Evolution returns the base64 string directly in data.qrcode.base64
+                real_qr_base64 = data["qrcode"]["base64"].replace("data:image/png;base64,", "")
+                return {"status": "success", "qr_base64": real_qr_base64, "message": "Sila scan QR code sebenar ini!"}
+        except Exception as api_err:
+            print(f"Evolution API not reachable: {api_err}. Falling back to mock QR.")
+
+        # 2. Fallback to Mock QR if Evolution API is offline
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
-        qr.add_data("mock_whatsapp_qr_code_for_evolution_api_" + str(user.id))
+        qr.add_data("mock_whatsapp_qr_for_user_" + str(user.id) + "_evolution_api_is_offline")
         qr.make(fit=True)
         img = qr.make_image(fill_color="black", back_color="white")
         
@@ -359,7 +390,7 @@ async def generate_whatsapp_qr(user=Depends(get_current_user)):
         img.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
         
-        return {"status": "success", "qr_base64": img_str, "message": "Sila scan QR code ini dengan WhatsApp makcik."}
+        return {"status": "success", "qr_base64": img_str, "message": "[MOCK] Evolution API offline. Sila buka server Evolution API."}
     except Exception as e:
         return JSONResponse(status_code=500, content={"detail": str(e)})
 
