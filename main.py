@@ -398,34 +398,44 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
         user_id = instance_name.replace("bebbi_user_", "")
         
         data = payload.get("data", {})
-        message_data = data.get("message", {})
         
-        # Sometimes messages come in an array
+        message_obj = {}
+        key = {}
+        
+        # Handle array format (Evolution API v1.x)
         if "messages" in data and len(data["messages"]) > 0:
-            message_data = data["messages"][0]
+            msg_item = data["messages"][0]
+            key = msg_item.get("key", {})
+            message_obj = msg_item.get("message", {})
+        # Handle flat object format
+        elif "key" in data and "message" in data:
+            key = data.get("key", {})
+            message_obj = data.get("message", {})
+        else:
+            # Fallback
+            key = data.get("key", {})
+            message_obj = data.get("message", {})
             
-        key = message_data.get("key", {})
         remote_jid = key.get("remoteJid", "")
         
         if key.get("fromMe") == True or "@g.us" in remote_jid or "status@broadcast" in remote_jid:
             return {"status": "ignored", "reason": "from me or group/status"}
             
-        msg_content = message_data.get("message", {})
         text = ""
         has_media = False
         mime_type = ""
         
-        if "conversation" in msg_content:
-            text = msg_content["conversation"]
-        elif "extendedTextMessage" in msg_content:
-            text = msg_content["extendedTextMessage"].get("text", "")
-        elif "imageMessage" in msg_content:
+        if "conversation" in message_obj:
+            text = message_obj["conversation"]
+        elif "extendedTextMessage" in message_obj:
+            text = message_obj["extendedTextMessage"].get("text", "")
+        elif "imageMessage" in message_obj:
             has_media = True
-            mime_type = msg_content["imageMessage"].get("mimetype", "image/jpeg")
-            text = msg_content["imageMessage"].get("caption", "")
-        elif "audioMessage" in msg_content:
+            mime_type = message_obj["imageMessage"].get("mimetype", "image/jpeg")
+            text = message_obj["imageMessage"].get("caption", "")
+        elif "audioMessage" in message_obj:
             has_media = True
-            mime_type = msg_content["audioMessage"].get("mimetype", "audio/ogg")
+            mime_type = message_obj["audioMessage"].get("mimetype", "audio/ogg")
             text = "[VOICE NOTE RECEIVED]"
             
         if not text.strip() and not has_media:
@@ -434,7 +444,8 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
         print(f"[WEBHOOK] User {user_id} received from {remote_jid}: text={text[:50]}, media={has_media}")
         
         # Pass to background task so we don't timeout the webhook
-        background_tasks.add_task(process_bebbi_ai, user_id, instance_name, remote_jid, text, message_data, has_media, mime_type)
+        # Pass data instead of message_data for media fetching
+        background_tasks.add_task(process_bebbi_ai, user_id, instance_name, remote_jid, text, data, has_media, mime_type)
         
         return {"status": "success"}
     except Exception as e:
