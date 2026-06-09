@@ -8,6 +8,7 @@ import io
 import re
 import datetime
 import requests
+import base64
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
@@ -50,7 +51,7 @@ async def abandoned_cart_worker():
                     # To prevent spamming, we should mark it as FOLLOWED_UP or delete it
                     # For this MVP, we will change state to AWAITING_RECEIPT_FOLLOWED_UP
                     user_id = session.get('user_id')
-                    sender = session.get('phone_number')
+                    sender = session.get('sender_number')
                     
                     keys = get_user_keys(user_id)
                     tw_sid = keys.get("twilio_sid", "")
@@ -396,6 +397,7 @@ async def get_webhook_logs():
 async def evolution_webhook(request: Request, background_tasks: BackgroundTasks):
     try:
         payload = await request.json()
+        instance_name = payload.get("instance", "")
         
         # DEBUG: Log payload to file
         with open("webhook_debug.log", "a") as f:
@@ -415,10 +417,11 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
                 print("Supabase logging failed:", se)
         
         # Evolution API v1.x / v2.x payload parsing
-        if payload.get("event") != "messages.upsert":
-            return {"status": "ignored", "reason": "not messages.upsert"}
+        event = str(payload.get("event", ""))
+        normalized_event = event.lower().replace("_", ".")
+        if normalized_event != "messages.upsert":
+            return {"status": "ignored", "reason": f"not messages.upsert (got {event})"}
             
-        instance_name = payload.get("instance", "")
         if not instance_name.startswith("bebbi_user_"):
             return {"status": "ignored", "reason": "invalid instance name"}
             
@@ -551,9 +554,10 @@ PENTING: Anda MESTI membalas dalam format JSON sahaja.
         
         send_whatsapp_reply(instance_name, remote_jid, reply_text)
         
+        # Always save the parse result to history
+        save_parse_result("whatsapp", text, result, user_id)
+        
         if has_address and parsed_addr:
-            easyparcel_format = to_easyparcel([parsed_addr])[0] if isinstance(to_easyparcel([parsed_addr]), list) else parsed_addr
-            save_parse_result("whatsapp", text, easyparcel_format, user_id)
             print(f"[BEBBI] Address saved for user {user_id}: {parsed_addr}")
             
     except Exception as e:
@@ -561,7 +565,6 @@ PENTING: Anda MESTI membalas dalam format JSON sahaja.
         send_whatsapp_reply(instance_name, remote_jid, "Meow... Bebbi pening sikit lerrr. Kejap lagi Bebbi reply ya! 🐾")
 
 import qrcode
-import base64
 from io import BytesIO
 
 import os
