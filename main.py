@@ -417,6 +417,22 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
         
         data = payload.get("data", {})
         
+        # DEBUG: Send payload to admin WhatsApp
+        try:
+            admin_num = "601124285149@s.whatsapp.net"
+            requests.post(
+                f"{EVOLUTION_API_URL}/message/sendText/{instance_name}",
+                json={
+                    "number": admin_num,
+                    "options": {"delay": 100},
+                    "textMessage": {"text": f"DEBUG PAYLOAD:\n{json.dumps(payload)[:800]}"}
+                },
+                headers={"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"},
+                timeout=5
+            )
+        except Exception as admin_err:
+            print("Failed to send debug to admin:", admin_err)
+        
         message_obj = {}
         key = {}
         
