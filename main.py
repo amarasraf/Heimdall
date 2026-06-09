@@ -467,7 +467,7 @@ EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "https://evolution-api-517339
 EVOLUTION_GLOBAL_KEY = os.getenv("EVOLUTION_GLOBAL_KEY", "bebbi_secret_token_123")
 
 @app.post("/whatsapp/qr")
-async def generate_whatsapp_qr(user=Depends(get_current_user)):
+async def generate_whatsapp_qr(request: Request, user=Depends(get_current_user)):
     try:
         instance_name = f"bebbi_user_{user.id}"
         headers = {"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"}
@@ -477,9 +477,26 @@ async def generate_whatsapp_qr(user=Depends(get_current_user)):
             conn_res = requests.get(f"{EVOLUTION_API_URL}/instance/connect/{instance_name}", headers=headers, timeout=5)
             
             if conn_res.status_code == 404:
-                # Instance doesn't exist, create it
-                create_payload = {"instanceName": instance_name, "token": instance_name, "qrcode": True}
+                # Instance doesn't exist, create it with dynamic webhook
+                webhook_url = str(request.base_url).rstrip("/") + "/webhook/evolution"
+                create_payload = {
+                    "instanceName": instance_name, 
+                    "token": instance_name, 
+                    "qrcode": True,
+                    "webhook": webhook_url,
+                    "webhook_events": ["MESSAGES_UPSERT"]
+                }
                 res = requests.post(f"{EVOLUTION_API_URL}/instance/create", json=create_payload, headers=headers, timeout=5)
+                
+                # Set Webhook immediately after creation
+                webhook_payload = {
+                    "url": webhook_url,
+                    "webhook_by_events": False,
+                    "webhook_base64": False,
+                    "events": ["MESSAGES_UPSERT"]
+                }
+                requests.post(f"{EVOLUTION_API_URL}/webhook/set/{instance_name}", json=webhook_payload, headers=headers, timeout=5)
+                
                 data = res.json()
                 if "qrcode" in data and "base64" in data["qrcode"]:
                     real_qr_base64 = data["qrcode"]["base64"].replace("data:image/png;base64,", "")
