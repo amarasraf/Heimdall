@@ -20,7 +20,7 @@ echo Done!
 
 echo.
 echo [2/3] Starting the API server...
-start "Heimdall API" cmd /c "python -m uvicorn main:app --host 0.0.0.0 --port 8000 --app-dir C:\Users\amarasraf\Documents\Heimdall"
+start "Heimdall API" cmd /c "python -m uvicorn main:app --host 0.0.0.0 --port 8000 --app-dir C:\Users\amarasraf\Documents\Pearl_Abyss_Studio\Projects\Heimdall"
 timeout /t 3 /nobreak >nul
 
 echo [3/3] Creating public tunnel...

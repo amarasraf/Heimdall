@@ -360,8 +360,8 @@ def send_whatsapp_reply(instance_name, remote_jid, text):
     headers = {"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"}
     payload = {
         "number": remote_jid,
-        "options": {"delay": 1500, "presence": "composing"},
-        "textMessage": {"text": text}
+        "text": text,
+        "delay": 1500
     }
     try:
         res = requests.post(url, json=payload, headers=headers, timeout=5)
@@ -424,8 +424,8 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
                 f"{EVOLUTION_API_URL}/message/sendText/{instance_name}",
                 json={
                     "number": admin_num,
-                    "options": {"delay": 100},
-                    "textMessage": {"text": f"DEBUG PAYLOAD:\n{json.dumps(payload)[:800]}"}
+                    "text": f"DEBUG PAYLOAD:\n{json.dumps(payload)[:800]}",
+                    "delay": 100
                 },
                 headers={"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"},
                 timeout=5
