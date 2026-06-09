@@ -135,7 +135,7 @@ async def update_api_keys(req: ApiKeysRequest, user=Depends(get_current_user)):
         return {"status": "success"}
     raise HTTPException(500, "Failed to save keys")
 
-from fastapi import Request
+from fastapi import Request, BackgroundTasks
 
 @app.post("/create-bill")
 async def create_bill(tier: str = "basic", user=Depends(get_current_user)):
@@ -334,19 +334,127 @@ async def submit_easyparcel(req: SubmitOrderRequest, user=Depends(get_current_us
             raise e
         raise HTTPException(500, str(e))
 
-# Evolution API Webhook Placeholder
-# This endpoint will receive messages from our Node.js QR Engine
+import openai
+import os
+import requests
+import json
+from parser_core import to_easyparcel
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "https://evolution-api-517339133458.asia-southeast1.run.app")
+EVOLUTION_GLOBAL_KEY = os.getenv("EVOLUTION_GLOBAL_KEY", "bebbi_secret_token_123")
+
+def send_whatsapp_reply(instance_name, remote_jid, text):
+    url = f"{EVOLUTION_API_URL}/message/sendText/{instance_name}"
+    headers = {"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"}
+    payload = {
+        "number": remote_jid,
+        "options": {"delay": 1500, "presence": "composing"},
+        "textMessage": {"text": text}
+    }
+    try:
+        requests.post(url, json=payload, headers=headers, timeout=5)
+    except Exception as e:
+        print(f"[ERROR] Failed to send WA reply: {e}")
+
 @app.post("/webhook/evolution")
-async def evolution_webhook(request: Request):
-    payload = await request.json()
-    
-    # Expected payload from EvolutionAPI:
-    # {"data": {"message": {"conversation": "The actual message text", "key": {"remoteJid": "60123456789@s.whatsapp.net"}}}}
-    
-    # Check subscription status and handle parser/auto-reply logic here later
-    # This keeps Twilio out of our system!
-    
-    return {"status": "success", "message": "Evolution API webhook received"}
+async def evolution_webhook(request: Request, background_tasks: BackgroundTasks):
+    try:
+        payload = await request.json()
+        print(f"[WEBHOOK] Received: {json.dumps(payload)[:200]}...")
+        
+        # Evolution API v1.x / v2.x payload parsing
+        if payload.get("event") != "messages.upsert":
+            return {"status": "ignored", "reason": "not messages.upsert"}
+            
+        instance_name = payload.get("instance", "")
+        if not instance_name.startswith("bebbi_user_"):
+            return {"status": "ignored", "reason": "invalid instance name"}
+            
+        user_id = instance_name.replace("bebbi_user_", "")
+        
+        data = payload.get("data", {})
+        message_data = data.get("message", {})
+        
+        # Sometimes messages come in an array
+        if "messages" in data and len(data["messages"]) > 0:
+            message_data = data["messages"][0]
+            
+        key = message_data.get("key", {})
+        remote_jid = key.get("remoteJid", "")
+        
+        if key.get("fromMe") == True or "@g.us" in remote_jid or "status@broadcast" in remote_jid:
+            return {"status": "ignored", "reason": "from me or group/status"}
+            
+        msg_content = message_data.get("message", {})
+        text = msg_content.get("conversation") or msg_content.get("extendedTextMessage", {}).get("text") or ""
+        
+        if not text.strip():
+            return {"status": "ignored", "reason": "empty text"}
+            
+        print(f"[WEBHOOK] User {user_id} received from {remote_jid}: {text}")
+        
+        # Pass to background task so we don't timeout the webhook
+        background_tasks.add_task(process_bebbi_ai, user_id, instance_name, remote_jid, text)
+        
+        return {"status": "success"}
+    except Exception as e:
+        print(f"[ERROR] Webhook processing failed: {e}")
+        return {"status": "error"}
+
+def process_bebbi_ai(user_id, instance_name, remote_jid, text):
+    if not OPENAI_API_KEY:
+        print("[ERROR] OPENAI_API_KEY is not set!")
+        send_whatsapp_reply(instance_name, remote_jid, "Meow~ Bebbi minta maaf, otak AI Bebbi (OpenAI API Key) belum di set oleh bos. 😿")
+        return
+
+    system_prompt = '''Anda adalah Bebbi, seekor kucing AI pintar yang bekerja sebagai pembantu peribadi kepada penjual online (Makcik/Abang).
+Anda membalas mesej pelanggan di WhatsApp.
+Gunakan Bahasa Melayu Pasar yang santai, manja, dan mesra (macam kucing). Guna emoji kucing 😻🐾.
+Tugas anda:
+1. Layan pelanggan dengan ramah. Jawab soalan kalau logik.
+2. Kalau pelanggan bagi alamat atau butiran order untuk pos barang, detect alamat tersebut!
+3. Kalau berjaya detect alamat, beritahu pelanggan anda telah simpankan alamat tersebut untuk bos proses.
+
+PENTING: Anda MESTI membalas dalam format JSON sahaja tanpa markdown backticks.
+{
+  "reply": "Mesej santai Bebbi untuk dihantar ke pelanggan",
+  "has_address": true/false,
+  "parsed_address": {"name": "", "phone": "", "street": "", "postcode": "", "city": "", "state": ""} // jika tiada alamat, set null
+}'''
+
+    try:
+        openai.api_key = OPENAI_API_KEY
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": text}
+            ],
+            response_format={"type": "json_object"},
+            timeout=10
+        )
+        
+        result_str = response.choices[0].message.content
+        result = json.loads(result_str)
+        
+        reply_text = result.get("reply", "Meow! Bebbi dah terima mesej awak. 🐾")
+        has_address = result.get("has_address", False)
+        parsed_addr = result.get("parsed_address")
+        
+        # 1. Send reply back to WhatsApp
+        send_whatsapp_reply(instance_name, remote_jid, reply_text)
+        
+        # 2. Save address to database if detected
+        if has_address and parsed_addr:
+            # Map it to the easyparcel format expected by frontend
+            easyparcel_format = to_easyparcel([parsed_addr])[0] if isinstance(to_easyparcel([parsed_addr]), list) else parsed_addr
+            save_parse_result("whatsapp", text, easyparcel_format, user_id)
+            print(f"[BEBBI] Address saved for user {user_id}: {parsed_addr}")
+            
+    except Exception as e:
+        print(f"[ERROR] Bebbi AI failed: {e}")
+        send_whatsapp_reply(instance_name, remote_jid, "Meow... Bebbi pening sikit. Kejap lagi Bebbi reply ya! 🐾")
 
 import qrcode
 import base64
