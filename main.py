@@ -334,15 +334,26 @@ async def submit_easyparcel(req: SubmitOrderRequest, user=Depends(get_current_us
             raise e
         raise HTTPException(500, str(e))
 
-import openai
+import google.generativeai as genai
 import os
 import requests
 import json
 from parser_core import to_easyparcel
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "https://evolution-api-517339133458.asia-southeast1.run.app")
 EVOLUTION_GLOBAL_KEY = os.getenv("EVOLUTION_GLOBAL_KEY", "bebbi_secret_token_123")
+
+def get_whatsapp_media(instance_name, message_data):
+    url = f"{EVOLUTION_API_URL}/chat/getBase64FromMediaMessage/{instance_name}"
+    headers = {"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"}
+    try:
+        res = requests.post(url, json={"message": message_data}, headers=headers, timeout=10)
+        data = res.json()
+        return data.get("base64")
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch media: {e}")
+        return None
 
 def send_whatsapp_reply(instance_name, remote_jid, text):
     url = f"{EVOLUTION_API_URL}/message/sendText/{instance_name}"
@@ -387,36 +398,53 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
             return {"status": "ignored", "reason": "from me or group/status"}
             
         msg_content = message_data.get("message", {})
-        text = msg_content.get("conversation") or msg_content.get("extendedTextMessage", {}).get("text") or ""
+        text = ""
+        has_media = False
+        mime_type = ""
         
-        if not text.strip():
-            return {"status": "ignored", "reason": "empty text"}
+        if "conversation" in msg_content:
+            text = msg_content["conversation"]
+        elif "extendedTextMessage" in msg_content:
+            text = msg_content["extendedTextMessage"].get("text", "")
+        elif "imageMessage" in msg_content:
+            has_media = True
+            mime_type = msg_content["imageMessage"].get("mimetype", "image/jpeg")
+            text = msg_content["imageMessage"].get("caption", "")
+        elif "audioMessage" in msg_content:
+            has_media = True
+            mime_type = msg_content["audioMessage"].get("mimetype", "audio/ogg")
+            text = "[VOICE NOTE RECEIVED]"
             
-        print(f"[WEBHOOK] User {user_id} received from {remote_jid}: {text}")
+        if not text.strip() and not has_media:
+            return {"status": "ignored", "reason": "empty text and no media"}
+            
+        print(f"[WEBHOOK] User {user_id} received from {remote_jid}: text={text[:50]}, media={has_media}")
         
         # Pass to background task so we don't timeout the webhook
-        background_tasks.add_task(process_bebbi_ai, user_id, instance_name, remote_jid, text)
+        background_tasks.add_task(process_bebbi_ai, user_id, instance_name, remote_jid, text, message_data, has_media, mime_type)
         
         return {"status": "success"}
     except Exception as e:
         print(f"[ERROR] Webhook processing failed: {e}")
         return {"status": "error"}
 
-def process_bebbi_ai(user_id, instance_name, remote_jid, text):
-    if not OPENAI_API_KEY:
-        print("[ERROR] OPENAI_API_KEY is not set!")
-        send_whatsapp_reply(instance_name, remote_jid, "Meow~ Bebbi minta maaf, otak AI Bebbi (OpenAI API Key) belum di set oleh bos. 😿")
+def process_bebbi_ai(user_id, instance_name, remote_jid, text, message_data, has_media, mime_type):
+    if not GEMINI_API_KEY:
+        print("[ERROR] GEMINI_API_KEY is not set!")
+        send_whatsapp_reply(instance_name, remote_jid, "Meow~ Bebbi minta maaf, otak AI Bebbi (Gemini API Key) belum di set oleh bos. 😿")
         return
 
     system_prompt = '''Anda adalah Bebbi, seekor kucing AI pintar yang bekerja sebagai pembantu peribadi kepada penjual online (Makcik/Abang).
-Anda membalas mesej pelanggan di WhatsApp.
+Anda membalas mesej pelanggan di WhatsApp. Pelanggan mungkin menghantar teks, gambar resit, atau voice note (rakaman suara).
 Gunakan Bahasa Melayu Pasar yang santai, manja, dan mesra (macam kucing). Guna emoji kucing 😻🐾.
 Tugas anda:
-1. Layan pelanggan dengan ramah. Jawab soalan kalau logik.
-2. Kalau pelanggan bagi alamat atau butiran order untuk pos barang, detect alamat tersebut!
-3. Kalau berjaya detect alamat, beritahu pelanggan anda telah simpankan alamat tersebut untuk bos proses.
+1. Layan pelanggan dengan ramah.
+2. Jika pelanggan hantar gambar resit, sahkan pembayaran jika boleh dibaca.
+3. Jika pelanggan hantar voice note, jawab persoalan mereka dalam teks (anda boleh faham audio tersebut).
+4. Kalau pelanggan bagi alamat atau butiran order untuk pos barang, detect alamat tersebut!
+5. Kalau berjaya detect alamat, beritahu pelanggan anda telah simpankan alamat tersebut untuk bos proses.
 
-PENTING: Anda MESTI membalas dalam format JSON sahaja tanpa markdown backticks.
+PENTING: Anda MESTI membalas dalam format JSON sahaja.
 {
   "reply": "Mesej santai Bebbi untuk dihantar ke pelanggan",
   "has_address": true/false,
@@ -424,37 +452,45 @@ PENTING: Anda MESTI membalas dalam format JSON sahaja tanpa markdown backticks.
 }'''
 
     try:
-        openai.api_key = OPENAI_API_KEY
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": text}
-            ],
-            response_format={"type": "json_object"},
-            timeout=10
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=system_prompt,
+            generation_config={"response_mime_type": "application/json"}
         )
         
-        result_str = response.choices[0].message.content
-        result = json.loads(result_str)
+        contents = []
+        if has_media:
+            base64_data = get_whatsapp_media(instance_name, message_data)
+            if base64_data:
+                # Format required by Gemini for base64 media
+                contents.append({
+                    "mime_type": mime_type,
+                    "data": base64_data
+                })
+        
+        if text and text != "[VOICE NOTE RECEIVED]":
+            contents.append(text)
+        elif not contents:
+            contents.append("Tolong layan pelanggan ini.")
+            
+        response = model.generate_content(contents)
+        result = json.loads(response.text)
         
         reply_text = result.get("reply", "Meow! Bebbi dah terima mesej awak. 🐾")
         has_address = result.get("has_address", False)
         parsed_addr = result.get("parsed_address")
         
-        # 1. Send reply back to WhatsApp
         send_whatsapp_reply(instance_name, remote_jid, reply_text)
         
-        # 2. Save address to database if detected
         if has_address and parsed_addr:
-            # Map it to the easyparcel format expected by frontend
             easyparcel_format = to_easyparcel([parsed_addr])[0] if isinstance(to_easyparcel([parsed_addr]), list) else parsed_addr
             save_parse_result("whatsapp", text, easyparcel_format, user_id)
             print(f"[BEBBI] Address saved for user {user_id}: {parsed_addr}")
             
     except Exception as e:
         print(f"[ERROR] Bebbi AI failed: {e}")
-        send_whatsapp_reply(instance_name, remote_jid, "Meow... Bebbi pening sikit. Kejap lagi Bebbi reply ya! 🐾")
+        send_whatsapp_reply(instance_name, remote_jid, "Meow... Bebbi pening sikit lerrr. Kejap lagi Bebbi reply ya! 🐾")
 
 import qrcode
 import base64
