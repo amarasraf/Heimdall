@@ -387,6 +387,16 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
             
         print(f"[WEBHOOK] Received: {json.dumps(payload)[:200]}...")
         
+        # DEBUG: Log to Supabase so it survives Cloud Run sleep
+        if supabase:
+            try:
+                supabase.table("parse_history").insert({
+                    "user_id": "system_debug",
+                    "items_json": payload
+                }).execute()
+            except Exception as se:
+                print("Supabase logging failed:", se)
+        
         # Evolution API v1.x / v2.x payload parsing
         if payload.get("event") != "messages.upsert":
             return {"status": "ignored", "reason": "not messages.upsert"}
