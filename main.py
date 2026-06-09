@@ -362,30 +362,32 @@ EVOLUTION_GLOBAL_KEY = os.getenv("EVOLUTION_GLOBAL_KEY", "bebbi_secret_token_123
 async def generate_whatsapp_qr(user=Depends(get_current_user)):
     try:
         instance_name = f"bebbi_user_{user.id}"
-        
-        # 1. Try to fetch real QR from Evolution API
         headers = {"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"}
         
-        # Create instance (safe to call even if it already exists)
-        create_payload = {
-            "instanceName": instance_name,
-            "token": instance_name,
-            "qrcode": True
-        }
-        
         try:
-            # We wrap this in a try-except so if Evolution API is offline, we fallback to mock
-            res = requests.post(f"{EVOLUTION_API_URL}/instance/create", json=create_payload, headers=headers, timeout=5)
-            data = res.json()
+            # 1. Check if instance already exists by trying to connect
+            conn_res = requests.get(f"{EVOLUTION_API_URL}/instance/connect/{instance_name}", headers=headers, timeout=5)
             
-            if "qrcode" in data and data["qrcode"]:
-                # Evolution returns the base64 string directly in data.qrcode.base64
-                real_qr_base64 = data["qrcode"]["base64"].replace("data:image/png;base64,", "")
-                return {"status": "success", "qr_base64": real_qr_base64, "message": "Sila scan QR code sebenar ini!"}
+            if conn_res.status_code == 404:
+                # Instance doesn't exist, create it
+                create_payload = {"instanceName": instance_name, "token": instance_name, "qrcode": True}
+                res = requests.post(f"{EVOLUTION_API_URL}/instance/create", json=create_payload, headers=headers, timeout=5)
+                data = res.json()
+                if "qrcode" in data and "base64" in data["qrcode"]:
+                    real_qr_base64 = data["qrcode"]["base64"].replace("data:image/png;base64,", "")
+                    return {"status": "success", "qr_base64": real_qr_base64, "message": "Sila scan QR code sebenar ini!"}
+            else:
+                data = conn_res.json()
+                if "base64" in data:
+                    real_qr_base64 = data["base64"].replace("data:image/png;base64,", "")
+                    return {"status": "success", "qr_base64": real_qr_base64, "message": "Sila scan QR code sebenar ini!"}
+                elif "instance" in data and data["instance"].get("state") == "open":
+                    return {"status": "success", "message": "WhatsApp sudah disambungkan! (Linked)", "qr_base64": ""}
+                    
         except Exception as api_err:
             print(f"Evolution API not reachable: {api_err}. Falling back to mock QR.")
 
-        # 2. Fallback to Mock QR if Evolution API is offline
+        # 2. Fallback to Mock QR if Evolution API is offline or errors
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data("mock_whatsapp_qr_for_user_" + str(user.id) + "_evolution_api_is_offline")
         qr.make(fit=True)
