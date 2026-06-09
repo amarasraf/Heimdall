@@ -367,13 +367,13 @@ def send_whatsapp_reply(instance_name, remote_jid, text):
         res = requests.post(url, json=payload, headers=headers, timeout=5)
         if res.status_code != 200 and supabase:
             try:
-                supabase.table("parse_history").insert({"user_id": "system_error", "items_json": {"error": res.text, "payload": payload}}).execute()
+                supabase.table("parse_history").insert({"user_id": "system_error", "image_url": "error", "parsed_data": {"error": res.text, "payload": payload}}).execute()
             except: pass
     except Exception as e:
         print(f"[ERROR] Failed to send WA reply: {e}")
         if supabase:
             try:
-                supabase.table("parse_history").insert({"user_id": "system_error", "items_json": {"error": str(e)}}).execute()
+                supabase.table("parse_history").insert({"user_id": "system_error", "image_url": "error", "parsed_data": {"error": str(e)}}).execute()
             except: pass
 
 @app.get("/webhook/debug/logs")
@@ -400,7 +400,7 @@ async def evolution_webhook(request: Request, background_tasks: BackgroundTasks)
             try:
                 supabase.table("parse_history").insert({
                     "user_id": "system_debug",
-                    "items_json": payload
+                    "parsed_data": payload
                 }).execute()
             except Exception as se:
                 print("Supabase logging failed:", se)
