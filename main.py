@@ -350,7 +350,7 @@ from io import BytesIO
 import os
 import requests
 
-EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "http://localhost:8080")
+EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "https://evolution-api-517339133458.asia-southeast1.run.app")
 EVOLUTION_GLOBAL_KEY = os.getenv("EVOLUTION_GLOBAL_KEY", "bebbi_secret_token_123")
 
 @app.post("/whatsapp/qr")
