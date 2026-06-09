@@ -509,13 +509,14 @@ async def generate_whatsapp_qr(request: Request, user=Depends(get_current_user))
         instance_name = f"bebbi_user_{user.id}"
         headers = {"apikey": EVOLUTION_GLOBAL_KEY, "Content-Type": "application/json"}
         
-        # Calculate correct webhook URL (handling Cloud Run proxy headers)
         forwarded_host = request.headers.get("x-forwarded-host")
         if forwarded_host:
-            proto = request.headers.get("x-forwarded-proto", "https")
-            base_url = f"{proto}://{forwarded_host}"
+            base_url = f"https://{forwarded_host}"
         else:
             base_url = str(request.base_url).rstrip("/")
+            if base_url.startswith("http://") and "localhost" not in base_url:
+                base_url = base_url.replace("http://", "https://")
+                
         webhook_url = f"{base_url}/webhook/evolution"
         
         # ALWAYS ensure webhook is set for this instance
